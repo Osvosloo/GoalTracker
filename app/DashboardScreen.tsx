@@ -22,6 +22,11 @@ const Dashboard: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
+  useEffect(() => {
+    if (weeklyStats) {
+      console.log("Weekly Stats:", JSON.stringify(weeklyStats, null, 2));
+    }
+  }, [weeklyStats]);
 
   useEffect(() => {
     loadDashboardData();
@@ -169,11 +174,29 @@ const Dashboard: React.FC = () => {
         <View style={styles.statsContainer}>
           <Text style={styles.statsHeader}>Weekly Stats</Text>
           <Text style={styles.statsText}>
-            Most Completed: {weeklyStats.mostCompletedGoals.join(", ")}
+            Most Completed (
+            {weeklyStats.mostCompletedGoals.length > 0
+              ? `${weeklyStats.mostCompletedGoals.length} goals`
+              : "No data"}
+            ):{" "}
           </Text>
-          <Text style={styles.statsText}>
-            Least Completed: {weeklyStats.leastCompletedGoals.join(", ")}
+          {weeklyStats.mostCompletedGoals.map((goal, index) => (
+            <Text key={goal.id} style={styles.goalText}>
+              • {goal.name}
+            </Text>
+          ))}
+          <Text style={[styles.statsText, { marginTop: 10 }]}>
+            Least Completed (
+            {weeklyStats.leastCompletedGoals.length > 0
+              ? `${weeklyStats.leastCompletedGoals.length} goals`
+              : "No data"}
+            ):
           </Text>
+          {weeklyStats.leastCompletedGoals.map((goal, index) => (
+            <Text key={goal.id} style={styles.goalText}>
+              • {goal.name}
+            </Text>
+          ))}
         </View>
       )}
     </View>
@@ -259,6 +282,11 @@ const styles = StyleSheet.create({
   statsText: {
     color: "#fff",
     fontSize: 14,
+  },
+  goalText: {
+    color: "#fff",
+    fontSize: 14,
+    marginLeft: 10,
   },
 });
 

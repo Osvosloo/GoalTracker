@@ -4,12 +4,11 @@ import { Goal, Section, SectionData } from "./types";
 export interface DailyCompletion {
   date: string;
   completedGoals: string[]; // Array of goal IDs
-  // comletedGoalsNames
 }
 
 export interface WeeklyStats {
-  mostCompletedGoals: string[];
-  leastCompletedGoals: string[];
+  mostCompletedGoals: { id: string; name: string }[];
+  leastCompletedGoals: { id: string; name: string }[];
   dailyCompletions: { [date: string]: SectionData[] };
 }
 
@@ -102,14 +101,28 @@ export const DashboardManager = {
         const sortedGoals = Object.entries(goalCompletionCount).sort(
           (a, b) => b[1] - a[1]
         );
-        const mostCompletedGoals = sortedGoals
-          .filter(([, count]) => count === sortedGoals[0][1])
-          .map(([id]) => id);
-        const leastCompletedGoals = sortedGoals
-          .filter(
-            ([, count]) => count === sortedGoals[sortedGoals.length - 1][1]
-          )
-          .map(([id]) => id);
+
+        const createGoalObject = (id: string) => {
+          const goal = goals.find((g) => g.id === id);
+          return { id, name: goal ? goal.name : "Unknown Goal" };
+        };
+
+        const mostCompletedGoals =
+          sortedGoals.length > 0
+            ? sortedGoals
+                .filter(([, count]) => count === sortedGoals[0][1])
+                .map(([id]) => createGoalObject(id))
+            : [];
+
+        const leastCompletedGoals =
+          sortedGoals.length > 0
+            ? sortedGoals
+                .filter(
+                  ([, count]) =>
+                    count === sortedGoals[sortedGoals.length - 1][1]
+                )
+                .map(([id]) => createGoalObject(id))
+            : [];
 
         return {
           mostCompletedGoals,

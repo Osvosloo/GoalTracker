@@ -400,7 +400,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   modalButtonText: {
-    color: "#007AFF",
+    color: "#fff",
     fontSize: 18,
   },
 });
