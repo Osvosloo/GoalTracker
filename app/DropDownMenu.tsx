@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
+import { MaterialIcons } from "@expo/vector-icons"; // Import MaterialIcons or any other icon library
 
 interface DropDownMenuProps {
   items: { label: string; value: string }[];
@@ -38,6 +39,7 @@ const DropDownMenu: React.FC<DropDownMenuProps> = ({
         labelStyle={styles.label}
         textStyle={styles.text} // Explicitly define text styles for dropdown items
         containerStyle={styles.containerStyle}
+        iconContainerStyle={styles.iconContainer}
       />
     </View>
   );
@@ -45,7 +47,8 @@ const DropDownMenu: React.FC<DropDownMenuProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 10,
+    marginHorizontal: 16,
   },
   dropdown: {
     backgroundColor: "#2c2c2c",
@@ -64,6 +67,11 @@ const styles = StyleSheet.create({
   },
   containerStyle: {
     height: 50,
+  },
+  iconContainer: {
+    backgroundColor: "transparent", // Ensure background is transparent
+    alignItems: "center", // Center the icon
+    justifyContent: "center", // Center the icon
   },
 });
 

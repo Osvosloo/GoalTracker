@@ -4,6 +4,7 @@ export interface Goal {
   score: number;
   completed: boolean;
   sectionTitle: string;
+  creationDate: Date;
 }
 
 export interface Section {

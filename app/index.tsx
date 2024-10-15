@@ -14,6 +14,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Section, Goal } from "./types";
 import Header from "./Header";
+import DashboardManager from "./DashboardManager";
 
 const ColorPicker = ({
   onColorSelect,
@@ -48,12 +49,14 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit">("add");
   const [sectionTitle, setSectionTitle] = useState("");
+  const [activeSectionTitle, setActiveSectionTitle] = useState("");
   const sectionTitleInputRef = useRef<TextInput>(null);
   const [sectionColor, setSectionColor] = useState("#000000");
   const router = useRouter();
 
   useEffect(() => {
     loadSections();
+    checkAndResetGoals();
     loadGoals();
   }, []);
 
@@ -110,17 +113,17 @@ export default function HomeScreen() {
       return;
     }
 
-    // Check for unique title
     const existingSection = sections.find(
-      (section) => section.title === sectionTitle
+      (section) =>
+        section.title === sectionTitle && section.title !== activeSectionTitle
     );
-    if (existingSection && existingSection.title !== sectionTitle) {
+    if (existingSection) {
       alert("Section title must be unique!");
       return;
     }
 
     const updatedSections = sections.map((section) =>
-      section.title === sectionTitle
+      section.title === activeSectionTitle
         ? { ...section, title: sectionTitle, color: sectionColor }
         : section
     );
@@ -157,13 +160,25 @@ export default function HomeScreen() {
     }
   };
 
+  const checkAndResetGoals = async () => {
+    const lastResetDate = await AsyncStorage.getItem("lastResetDate");
+    const today = new Date().toISOString().split("T")[0];
+
+    if (lastResetDate !== today) {
+      await DashboardManager.storeCompletedGoals();
+      await DashboardManager.resetDailyGoals();
+      await AsyncStorage.setItem("lastResetDate", today);
+    }
+  };
   const openModal = (type: "add" | "edit", title?: string) => {
     setModalType(type);
     if (type === "edit" && title) {
       const section = sections.find((s) => s.title === title);
+      setActiveSectionTitle(section?.title || "");
       setSectionTitle(section?.title || "");
       setSectionColor(section?.color || "#000000");
     } else {
+      setActiveSectionTitle("");
       setSectionTitle("");
       setSectionColor("#000000");
     }
@@ -212,13 +227,11 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
       <View style={styles.topBar}>
-        <Header title="Goals" />
+        <Header title="Goals" showDashboardButton={true} />
       </View>
-
       <FlatList
-        style={{ marginTop: 54 }}
+        style={{ marginTop: 75 }}
         data={sections}
         renderItem={renderSectionItem}
         keyExtractor={(item) => item.title} // Use title as unique key
@@ -281,18 +294,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
   },
   listContainer: {
     paddingHorizontal: 20,
+    paddingTop: 10,
+    // backgroundColor: "#7E57C2",
+    // flex: 1,
   },
   sectionItemContainer: {
     flexDirection: "row",
@@ -330,7 +337,6 @@ const styles = StyleSheet.create({
     height: 60,
     justifyContent: "center",
     alignItems: "center",
-    opacity: 0.9,
   },
   modalOverlay: {
     flex: 1,

@@ -73,7 +73,8 @@ export default function SectionScreen() {
       name: goalName,
       score: goalScore,
       completed: false,
-      sectionTitle: sectionTitle, // Use sectionTitle
+      sectionTitle: sectionTitle,
+      creationDate: new Date(),
     };
     const updatedGoals = [...goals, newGoal];
     setGoals(updatedGoals);
@@ -166,7 +167,6 @@ export default function SectionScreen() {
           ]}
         >
           <Text style={styles.scoreText}>{item.score}</Text>
-          {/* <OutlinedText text={item.score.toString()} style={styles.scoreText} /> */}
         </View>
         <Text style={[styles.goalName, item.completed && styles.completedGoal]}>
           {item.name}
@@ -175,13 +175,22 @@ export default function SectionScreen() {
       <View style={styles.iconContainer}>
         {activeGoal === item.id ? (
           <>
-            <TouchableOpacity onPress={() => openModal("edit", item.id)}>
+            <TouchableOpacity
+              onPress={() => openModal("edit", item.id)}
+              style={styles.iconButton}
+            >
               <MaterialIcons name="edit" size={24} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDeleteGoal(item.id)}>
+            <TouchableOpacity
+              onPress={() => handleDeleteGoal(item.id)}
+              style={styles.iconButton}
+            >
               <MaterialIcons name="delete" size={24} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setActiveGoal(null)}>
+            <TouchableOpacity
+              onPress={() => setActiveGoal(null)}
+              style={styles.closeButton}
+            >
               <MaterialIcons name="close" size={24} color="#fff" />
             </TouchableOpacity>
           </>
@@ -199,18 +208,23 @@ export default function SectionScreen() {
 
   return (
     <View style={styles.container}>
-      <Header title={title} />
+      <View style={styles.topBar}>
+        <Header title={title} showDashboardButton={true} />
+      </View>
+
       <FlatList
-        style={{ marginTop: 64 }}
+        style={{ marginTop: 75 }}
+        contentContainerStyle={styles.listContainer}
         data={goals}
         renderItem={renderGoalItem}
         keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
       />
       <TouchableOpacity
         style={styles.floatingButton}
         onPress={() => openModal("add")}
       >
-        <MaterialIcons name="add" size={24} color="#fff" />
+        <MaterialIcons name="add" size={24} color="#000" />
       </TouchableOpacity>
 
       <Modal transparent={true} visible={modalVisible} animationType="slide">
@@ -261,15 +275,18 @@ export default function SectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#121212",
   },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
-    marginVertical: 20,
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 5,
+    // flex: 1,
+    // backgroundColor: "#7E57C2",
   },
   goalItemContainer: {
     flexDirection: "row",
@@ -278,7 +295,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#2c2c2c",
     borderRadius: 10,
     borderWidth: 1,
-    marginBottom: 10,
+    marginBottom: 5,
     padding: 15,
   },
   goalItem: {
@@ -290,7 +307,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#fff",
-    flex: 1,
+    // flex: 1,
     marginLeft: 10,
   },
   completedGoal: {
@@ -312,7 +329,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    width: 120,
+    width: 90,
+  },
+  iconButton: {
+    padding: 3,
+  },
+  closeButton: {
+    padding: 5,
+    marginLeft: "auto", // Push close button to the right
   },
   menuButton: {
     padding: 5,
@@ -321,17 +345,12 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 20,
     bottom: 20,
-    backgroundColor: "#7E57C2",
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 30,
+    width: 60,
+    height: 60,
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
+    alignItems: "center",
   },
   modalOverlay: {
     flex: 1,
