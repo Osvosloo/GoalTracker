@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   dateSelector: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginVertical: 10,
+    marginBottom: 10,
   },
   dateButton: {
     padding: 5,
