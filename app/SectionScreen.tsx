@@ -12,8 +12,9 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Goal } from "./types";
-import Header from "./Header";
+import { Goal, DailyRecord } from "./types";
+import Header from "./Components/Header";
+import AddButton from "./UI/AddButton";
 
 export default function SectionScreen() {
   const params = useLocalSearchParams();
@@ -31,6 +32,9 @@ export default function SectionScreen() {
   const [editGoalId, setEditGoalId] = useState<string | null>(null);
   const [activeGoal, setActiveGoal] = useState<string | null>(null);
   const [sectionTitle, setSectionTitle] = useState<string>(""); // Changed to sectionTitle
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
 
   useEffect(() => {
     const initializeSection = async () => {
@@ -46,17 +50,25 @@ export default function SectionScreen() {
     if (sectionTitle) {
       loadGoals();
     }
-  }, [sectionTitle]);
+  }, [sectionTitle, selectedDate]);
 
   const loadGoals = async () => {
     try {
-      const storedGoals = await AsyncStorage.getItem("goals");
-      if (storedGoals) {
-        const allGoals: Goal[] = JSON.parse(storedGoals);
-        const sectionGoals = allGoals.filter(
-          (goal) => goal.sectionTitle === sectionTitle // Use sectionTitle for filtering
+      const recordsData = await AsyncStorage.getItem("dailyRecords");
+      if (recordsData) {
+        const dailyRecords: DailyRecord[] = JSON.parse(recordsData);
+        const dailyRecord = dailyRecords.find(
+          (record) => record.date === selectedDate
         );
-        setGoals(sectionGoals);
+        if (dailyRecord) {
+          const sectionGoals =
+            dailyRecord.sections.find(
+              (section) => section.title === sectionTitle
+            )?.goals || [];
+          setGoals(sectionGoals);
+        } else {
+          setGoals([]); // Clear goals if no record is found for the selected date
+        }
       }
     } catch (error) {
       console.error("Failed to load goals:", error);
@@ -84,16 +96,62 @@ export default function SectionScreen() {
 
   const saveGoals = async (updatedGoals: Goal[]) => {
     try {
-      const storedGoals = await AsyncStorage.getItem("goals");
-      let allGoals: Goal[] = storedGoals ? JSON.parse(storedGoals) : [];
+      const recordsData = await AsyncStorage.getItem("dailyRecords");
+      let dailyRecords: DailyRecord[] = recordsData
+        ? JSON.parse(recordsData)
+        : [];
 
-      allGoals = allGoals.filter((goal) => goal.sectionTitle !== sectionTitle); // Use sectionTitle for filtering
-      allGoals = [...allGoals, ...updatedGoals];
+      // Update the goals in the correct daily record
+      const dailyRecordIndex = dailyRecords.findIndex(
+        (record) => record.date === selectedDate
+      );
+      if (dailyRecordIndex !== -1) {
+        const dailyRecord = dailyRecords[dailyRecordIndex];
+        const updatedSections = dailyRecord.sections.map((section) => {
+          if (section.title === sectionTitle) {
+            return {
+              ...section,
+              goals: updatedGoals,
+              totalScore: calculateTotalScore(updatedGoals), // Calculate total score
+              completedScore: calculateCompletedScore(updatedGoals), // Calculate completed score
+              color: section.color, // Retain the existing color or set a new one
+            }; // Update goals for the specific section
+          }
+          return section;
+        });
+        dailyRecords[dailyRecordIndex] = {
+          ...dailyRecord,
+          sections: updatedSections,
+        };
+      } else {
+        // Create a new daily record if it doesn't exist
+        dailyRecords.push({
+          date: selectedDate,
+          sections: [
+            {
+              title: sectionTitle,
+              goals: updatedGoals,
+              totalScore: calculateTotalScore(updatedGoals), // Calculate total score
+              completedScore: calculateCompletedScore(updatedGoals), // Calculate completed score
+              color: "#FFFFFF", // Set a default color or use a specific one
+            },
+          ],
+        });
+      }
 
-      await AsyncStorage.setItem("goals", JSON.stringify(allGoals));
+      await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));
     } catch (error) {
       console.error("Failed to save goals:", error);
     }
+  };
+  const calculateTotalScore = (goals: Goal[]): number => {
+    return goals.reduce((total, goal) => total + goal.score, 0);
+  };
+  const calculateCompletedScore = (goals: Goal[]): number => {
+    return goals.reduce(
+      (total, goal) => (goal.completed ? total + goal.score : total),
+      0
+    );
   };
 
   const handleUpdateGoal = async () => {
@@ -220,12 +278,7 @@ export default function SectionScreen() {
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
       />
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={() => openModal("add")}
-      >
-        <MaterialIcons name="add" size={24} color="#000" />
-      </TouchableOpacity>
+      <AddButton onPress={() => openModal("add")} />
 
       <Modal transparent={true} visible={modalVisible} animationType="slide">
         <View style={styles.modalOverlay}>
@@ -341,17 +394,6 @@ const styles = StyleSheet.create({
   },
   menuButton: {
     padding: 5,
-  },
-  floatingButton: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    backgroundColor: "#fff",
-    borderRadius: 30,
-    width: 60,
-    height: 60,
-    justifyContent: "center",
-    alignItems: "center",
   },
   modalOverlay: {
     flex: 1,

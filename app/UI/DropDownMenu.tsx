@@ -1,7 +1,7 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
-import { MaterialIcons } from "@expo/vector-icons"; // Import MaterialIcons or any other icon library
+import { StyleSheet } from "react-native";
 
 interface DropDownMenuProps {
   items: { label: string; value: string }[];
@@ -17,27 +17,33 @@ const DropDownMenu: React.FC<DropDownMenuProps> = ({
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState<string | null>(selectedValue);
 
+  // Sync the selected value with the prop
   React.useEffect(() => {
-    setValue(selectedValue); // Sync the selected value with the prop
+    setValue(selectedValue);
   }, [selectedValue]);
+
+  // Add "All Sections" option to the items
+  const allSectionsItem = { label: "All Sections", value: "all" };
+  const dropdownItems = [allSectionsItem, ...items];
 
   return (
     <View style={styles.container}>
       <DropDownPicker
         open={open}
         value={value}
-        items={items}
+        items={dropdownItems}
         setOpen={setOpen}
-        setValue={(val) => {
-          setValue(val as unknown as string);
-          onValueChange(val as unknown as string);
-        }}
+        setValue={setValue}
         setItems={() => {}}
         placeholder="Select a section..."
-        dropDownContainerStyle={styles.dropdownContainer}
+        onChangeValue={(val) => {
+          setValue(val);
+          onValueChange(val); // Pass the selected value to the handler
+        }}
         style={styles.dropdown}
+        dropDownContainerStyle={styles.dropdownContainer}
         labelStyle={styles.label}
-        textStyle={styles.text} // Explicitly define text styles for dropdown items
+        textStyle={styles.text}
         containerStyle={styles.containerStyle}
         iconContainerStyle={styles.iconContainer}
       />
@@ -63,15 +69,15 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   text: {
-    color: "#fff", // Explicitly set text color to white
+    color: "#fff",
   },
   containerStyle: {
     height: 50,
   },
   iconContainer: {
-    backgroundColor: "transparent", // Ensure background is transparent
-    alignItems: "center", // Center the icon
-    justifyContent: "center", // Center the icon
+    backgroundColor: "transparent",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

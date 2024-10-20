@@ -12,14 +12,9 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-interface Goal {
-  id: string;
-  name: string;
-  score: number;
-  completed: boolean;
-  sectionTitle: string;
-}
+import { Goal } from "./types";
+import Header from "./Components/Header";
+import AddButton from "./UI/AddButton";
 
 export default function SectionScreen() {
   const params = useLocalSearchParams();
@@ -37,6 +32,9 @@ export default function SectionScreen() {
   const [editGoalId, setEditGoalId] = useState<string | null>(null);
   const [activeGoal, setActiveGoal] = useState<string | null>(null);
   const [sectionTitle, setSectionTitle] = useState<string>(""); // Changed to sectionTitle
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
 
   useEffect(() => {
     const initializeSection = async () => {
@@ -79,7 +77,8 @@ export default function SectionScreen() {
       name: goalName,
       score: goalScore,
       completed: false,
-      sectionTitle: sectionTitle, // Use sectionTitle
+      sectionTitle: sectionTitle,
+      creationDate: new Date(),
     };
     const updatedGoals = [...goals, newGoal];
     setGoals(updatedGoals);
@@ -155,7 +154,7 @@ export default function SectionScreen() {
   };
 
   const getScoreColor = (score: number) => {
-    const colors = ["#4CAF50", "#8BC34A", "#FFEB3B", "#FF9800", "#F44336"];
+    const colors = ["#00FF00", "#7FFF00", "#FFFF00", "#FF7F00", "#FF0000"];
     return colors[score - 1];
   };
 
@@ -180,13 +179,22 @@ export default function SectionScreen() {
       <View style={styles.iconContainer}>
         {activeGoal === item.id ? (
           <>
-            <TouchableOpacity onPress={() => openModal("edit", item.id)}>
+            <TouchableOpacity
+              onPress={() => openModal("edit", item.id)}
+              style={styles.iconButton}
+            >
               <MaterialIcons name="edit" size={24} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDeleteGoal(item.id)}>
+            <TouchableOpacity
+              onPress={() => handleDeleteGoal(item.id)}
+              style={styles.iconButton}
+            >
               <MaterialIcons name="delete" size={24} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setActiveGoal(null)}>
+            <TouchableOpacity
+              onPress={() => setActiveGoal(null)}
+              style={styles.closeButton}
+            >
               <MaterialIcons name="close" size={24} color="#fff" />
             </TouchableOpacity>
           </>
@@ -204,18 +212,19 @@ export default function SectionScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>{title}</Text>
+      <View style={styles.topBar}>
+        <Header title={title} showDashboardButton={true} />
+      </View>
+
       <FlatList
+        style={{ marginTop: 80 }}
+        contentContainerStyle={styles.listContainer}
         data={goals}
         renderItem={renderGoalItem}
         keyExtractor={(item) => item.id}
+        keyboardShouldPersistTaps="handled"
       />
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={() => openModal("add")}
-      >
-        <MaterialIcons name="add" size={24} color="#fff" />
-      </TouchableOpacity>
+      <AddButton onPress={() => openModal("add")} />
 
       <Modal transparent={true} visible={modalVisible} animationType="slide">
         <View style={styles.modalOverlay}>
@@ -265,30 +274,29 @@ export default function SectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: "#121212",
   },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
-    marginVertical: 20,
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 5,
+    marginTop: 20,
+    // flex: 1,
+    // backgroundColor: "#7E57C2",
   },
   goalItemContainer: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#1E1E1E",
-    padding: 20,
-    marginVertical: 8,
-    marginHorizontal: 16,
-    borderRadius: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
+    alignItems: "center",
+    backgroundColor: "#2c2c2c",
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 5,
+    padding: 15,
   },
   goalItem: {
     flex: 1,
@@ -299,7 +307,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#fff",
-    flex: 1,
+    // flex: 1,
     marginLeft: 10,
   },
   completedGoal: {
@@ -307,40 +315,31 @@ const styles = StyleSheet.create({
     color: "#888",
   },
   scoreIndicator: {
-    width: 30,
+    width: 18,
     height: 30,
     borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
   },
   scoreText: {
-    color: "#fff",
+    color: "#000000",
     fontWeight: "bold",
   },
   iconContainer: {
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    width: 120,
+    width: 90,
+  },
+  iconButton: {
+    padding: 3,
+  },
+  closeButton: {
+    padding: 5,
+    marginLeft: "auto", // Push close button to the right
   },
   menuButton: {
     padding: 5,
-  },
-  floatingButton: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    backgroundColor: "#7E57C2",
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
   },
   modalOverlay: {
     flex: 1,
@@ -383,7 +382,11 @@ const styles = StyleSheet.create({
   },
   modalButtonText: {
     fontSize: 18,
-    color: "#7E57C2",
+    color: "#fff",
+    padding: 10,
+  },
+
+  dashboardButton: {
     padding: 10,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -12,46 +12,11 @@ import {
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-interface Section {
-  title: string;
-  color: string;
-}
-
-interface Goal {
-  id: string;
-  name: string;
-  score: number;
-  completed: boolean;
-  sectionTitle: string; // Use title as the identifier
-}
-
-const ColorPicker = ({
-  onColorSelect,
-}: {
-  onColorSelect: (color: string) => void;
-}) => {
-  const colors = [
-    "#39FF14",
-    "#FF3503",
-    "#00FFE5",
-    "#FF1493",
-    "#8A2BE2",
-    "#FE59C2",
-  ];
-
-  return (
-    <View style={styles.colorPickerContainer}>
-      {colors.map((color) => (
-        <TouchableOpacity
-          key={color}
-          style={[styles.colorOption, { backgroundColor: color }]}
-          onPress={() => onColorSelect(color)}
-        />
-      ))}
-    </View>
-  );
-};
+import { Section, Goal } from "./types";
+import Header from "./Components/Header";
+import DashboardManager from "./DashboardComp/DashboardManager";
+import ColorPicker from "./HomeComp/ColorPicker";
+import AddButton from "./UI/AddButton";
 
 export default function HomeScreen() {
   const [sections, setSections] = useState<Section[]>([]);
@@ -59,11 +24,14 @@ export default function HomeScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit">("add");
   const [sectionTitle, setSectionTitle] = useState("");
+  const [activeSectionTitle, setActiveSectionTitle] = useState("");
+  const sectionTitleInputRef = useRef<TextInput>(null);
   const [sectionColor, setSectionColor] = useState("#000000");
   const router = useRouter();
 
   useEffect(() => {
     loadSections();
+    checkAndResetGoals();
     loadGoals();
   }, []);
 
@@ -82,6 +50,7 @@ export default function HomeScreen() {
     try {
       const storedGoals = await AsyncStorage.getItem("goals");
       if (storedGoals) {
+        console.log(storedGoals);
         setGoals(JSON.parse(storedGoals));
       }
     } catch (error) {
@@ -120,17 +89,17 @@ export default function HomeScreen() {
       return;
     }
 
-    // Check for unique title
     const existingSection = sections.find(
-      (section) => section.title === sectionTitle
+      (section) =>
+        section.title === sectionTitle && section.title !== activeSectionTitle
     );
-    if (existingSection && existingSection.title !== sectionTitle) {
+    if (existingSection) {
       alert("Section title must be unique!");
       return;
     }
 
     const updatedSections = sections.map((section) =>
-      section.title === sectionTitle
+      section.title === activeSectionTitle
         ? { ...section, title: sectionTitle, color: sectionColor }
         : section
     );
@@ -167,27 +136,38 @@ export default function HomeScreen() {
     }
   };
 
+  const checkAndResetGoals = async () => {
+    const lastResetDate = await AsyncStorage.getItem("lastResetDate");
+    const today = new Date().toISOString().split("T")[0];
+
+    if (lastResetDate !== today) {
+      await DashboardManager.storeCompletedGoals();
+      await DashboardManager.resetDailyGoals();
+      await AsyncStorage.setItem("lastResetDate", today);
+    }
+  };
   const openModal = (type: "add" | "edit", title?: string) => {
     setModalType(type);
     if (type === "edit" && title) {
       const section = sections.find((s) => s.title === title);
+      setActiveSectionTitle(section?.title || "");
       setSectionTitle(section?.title || "");
       setSectionColor(section?.color || "#000000");
     } else {
+      setActiveSectionTitle("");
       setSectionTitle("");
       setSectionColor("#000000");
     }
     setModalVisible(true);
+    setTimeout(() => {
+      sectionTitleInputRef.current?.focus();
+    }, 100);
   };
 
   const closeModal = () => {
     setModalVisible(false);
     setSectionTitle("");
     setSectionColor("#000000");
-  };
-
-  const navigateToDashboard = () => {
-    router.push("/DashboardScreen");
   };
 
   const renderSectionItem = ({ item }: { item: Section }) => (
@@ -205,10 +185,16 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>{item.title}</Text>
       </TouchableOpacity>
       <View style={styles.iconContainer}>
-        <TouchableOpacity onPress={() => openModal("edit", item.title)}>
+        <TouchableOpacity
+          onPress={() => openModal("edit", item.title)}
+          style={styles.editButton}
+        >
           <MaterialIcons name="edit" size={24} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDelete(item.title)}>
+        <TouchableOpacity
+          onPress={() => handleDelete(item.title)}
+          style={styles.deleteButton}
+        >
           <MaterialIcons name="delete" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -217,33 +203,18 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
       <View style={styles.topBar}>
-        <TouchableOpacity style={styles.burgerMenu}>
-          <MaterialIcons name="menu" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.header}>Goals</Text>
-        <TouchableOpacity
-          style={styles.dashboardButton}
-          onPress={navigateToDashboard}
-        >
-          <MaterialIcons name="dashboard" size={24} color="#fff" />
-        </TouchableOpacity>
+        <Header title="Goals" showDashboardButton={true} />
       </View>
-
       <FlatList
+        style={{ marginTop: 95 }}
         data={sections}
         renderItem={renderSectionItem}
         keyExtractor={(item) => item.title} // Use title as unique key
         contentContainerStyle={styles.listContainer}
+        keyboardShouldPersistTaps="handled"
       />
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={() => openModal("add")}
-      >
-        <MaterialIcons name="add" size={24} color="#fff" />
-      </TouchableOpacity>
-
+      <AddButton onPress={() => openModal("add")} />
       <Modal transparent={true} visible={modalVisible} animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -251,9 +222,10 @@ export default function HomeScreen() {
               {modalType === "add" ? "New Section" : "Edit Section"}
             </Text>
             <TextInput
+              ref={sectionTitleInputRef}
               style={[
                 styles.textInput,
-                { borderColor: sectionColor, borderWidth: 2 },
+                { borderColor: sectionColor, borderWidth: 1 },
               ]}
               placeholder="Enter section title"
               placeholderTextColor="#aaa"
@@ -286,26 +258,18 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1e1e1e",
-    paddingTop: StatusBar.currentHeight,
+    backgroundColor: "#121212",
   },
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    textAlign: "center",
-    // marginBottom: 5,
   },
   listContainer: {
     paddingHorizontal: 20,
+    paddingTop: 10,
+    // backgroundColor: "#7E57C2",
+    // flex: 1,
   },
   sectionItemContainer: {
     flexDirection: "row",
@@ -313,7 +277,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#2c2c2c",
     borderRadius: 10,
-    borderWidth: 2,
+    borderWidth: 1,
     marginBottom: 10,
     padding: 15,
   },
@@ -327,22 +291,11 @@ const styles = StyleSheet.create({
   iconContainer: {
     flexDirection: "row",
   },
-  burgerMenu: {
-    padding: 5,
+  editButton: {
+    marginHorizontal: 5,
   },
-  dashboardButton: {
-    padding: 10,
-  },
-  floatingButton: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    backgroundColor: "#007AFF",
-    borderRadius: 30,
-    width: 60,
-    height: 60,
-    justifyContent: "center",
-    alignItems: "center",
+  deleteButton: {
+    marginHorizontal: 5,
   },
   modalOverlay: {
     flex: 1,
@@ -406,7 +359,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   modalButtonText: {
-    color: "#007AFF",
+    color: "#fff",
     fontSize: 18,
   },
 });

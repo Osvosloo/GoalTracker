@@ -1,16 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Goal, Section, SectionData } from "./types";
-
-export interface DailyCompletion {
-  date: string;
-  completedGoals: string[]; // Array of goal IDs
-}
-
-export interface WeeklyStats {
-  mostCompletedGoals: { id: string; name: string }[];
-  leastCompletedGoals: { id: string; name: string }[];
-  dailyCompletions: { [date: string]: SectionData[] };
-}
+import {
+  DailyCompletion,
+  WeeklyStats,
+  Goal,
+  Section,
+  SectionData,
+} from "../types";
 
 export const DashboardManager = {
   resetDailyGoals: async () => {
@@ -29,8 +24,10 @@ export const DashboardManager = {
   storeCompletedGoals: async () => {
     try {
       const goalsData = await AsyncStorage.getItem("goals");
-      if (goalsData) {
+      const sectionsData = await AsyncStorage.getItem("sections");
+      if (goalsData && sectionsData) {
         const goals: Goal[] = JSON.parse(goalsData);
+        const sections: Section[] = JSON.parse(sectionsData);
         const completedGoalIds = goals
           .filter((goal) => goal.completed)
           .map((goal) => goal.id);
@@ -41,7 +38,32 @@ export const DashboardManager = {
           ? JSON.parse(historyData)
           : [];
 
-        history.push({ date: today, completedGoals: completedGoalIds });
+        // Store section data along with completed goals
+        const sectionData = sections.map((section) => {
+          const sectionGoals = goals.filter(
+            (goal) => goal.sectionTitle === section.title
+          );
+          const totalScore = sectionGoals.reduce(
+            (sum, goal) => sum + goal.score,
+            0
+          );
+          const completedScore = sectionGoals
+            .filter((goal) => goal.completed)
+            .reduce((sum, goal) => sum + goal.score, 0);
+          return {
+            title: section.title,
+            color: section.color,
+            totalScore,
+            completedScore,
+            goals: sectionGoals,
+          };
+        });
+
+        history.push({
+          date: today,
+          completedGoals: completedGoalIds,
+          sectionData,
+        });
 
         // Keep only the last 7 days
         const last7Days = history.slice(-7);
@@ -59,6 +81,7 @@ export const DashboardManager = {
   getWeeklyStats: async (): Promise<WeeklyStats> => {
     try {
       const historyData = await AsyncStorage.getItem("completionHistory");
+      console.log(`History Data: ${historyData}`);
       const goalsData = await AsyncStorage.getItem("goals");
       const sectionsData = await AsyncStorage.getItem("sections");
 
@@ -92,6 +115,7 @@ export const DashboardManager = {
               ...section,
               totalScore,
               completedScore,
+              goals: sectionGoals,
             };
           });
 
@@ -119,7 +143,8 @@ export const DashboardManager = {
             ? sortedGoals
                 .filter(
                   ([, count]) =>
-                    count === sortedGoals[sortedGoals.length - 1][1]
+                    count === sortedGoals[sortedGoals.length - 1][1] &&
+                    count > 0
                 )
                 .map(([id]) => createGoalObject(id))
             : [];

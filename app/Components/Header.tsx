@@ -115,6 +115,7 @@ const styles = StyleSheet.create({
   },
   menu: {
     zIndex: 30,
+    marginTop: 80,
   },
 });
 

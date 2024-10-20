@@ -12,39 +12,14 @@ import {
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Section, Goal } from "./types";
-import Header from "./Header";
-import DashboardManager from "./DashboardManager";
-
-const ColorPicker = ({
-  onColorSelect,
-}: {
-  onColorSelect: (color: string) => void;
-}) => {
-  const colors = [
-    "#39FF14",
-    "#FF3503",
-    "#00FFE5",
-    "#FF1493",
-    "#8A2BE2",
-    "#FE59C2",
-  ];
-
-  return (
-    <View style={styles.colorPickerContainer}>
-      {colors.map((color) => (
-        <TouchableOpacity
-          key={color}
-          style={[styles.colorOption, { backgroundColor: color }]}
-          onPress={() => onColorSelect(color)}
-        />
-      ))}
-    </View>
-  );
-};
+import { Section, Goal, DailyRecord, SectionData } from "./types";
+import Header from "./Components/Header";
+import DashboardManager from "./DashboardComp/DashboardManager";
+import ColorPicker from "./HomeComp/ColorPicker";
+import AddButton from "./UI/AddButton";
 
 export default function HomeScreen() {
-  const [sections, setSections] = useState<Section[]>([]);
+  const [sections, setSections] = useState<SectionData[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit">("add");
@@ -53,41 +28,51 @@ export default function HomeScreen() {
   const sectionTitleInputRef = useRef<TextInput>(null);
   const [sectionColor, setSectionColor] = useState("#000000");
   const router = useRouter();
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
 
   useEffect(() => {
     loadSections();
     checkAndResetGoals();
-    loadGoals();
   }, []);
 
   const loadSections = async () => {
     try {
-      const storedSections = await AsyncStorage.getItem("sections");
-      if (storedSections) {
-        setSections(JSON.parse(storedSections));
+      const recordsData = await AsyncStorage.getItem("dailyRecords");
+      if (recordsData) {
+        const dailyRecords: DailyRecord[] = JSON.parse(recordsData);
+        const dailyRecord = dailyRecords.find(
+          (record) => record.date === selectedDate
+        );
+        if (dailyRecord) {
+          setSections(dailyRecord.sections);
+        } else {
+          setSections([]); // Clear sections if no record is found for the selected date
+        }
       }
     } catch (error) {
       console.error("Failed to load sections:", error);
     }
   };
 
-  const loadGoals = async () => {
-    try {
-      const storedGoals = await AsyncStorage.getItem("goals");
-      if (storedGoals) {
-        setGoals(JSON.parse(storedGoals));
-      }
-    } catch (error) {
-      console.error("Failed to load goals:", error);
-    }
-  };
+  // const loadGoals = async () => {
+  //   try {
+  //     const storedGoals = await AsyncStorage.getItem("goals");
+  //     if (storedGoals) {
+  //       console.log(storedGoals);
+  //       setGoals(JSON.parse(storedGoals));
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to load goals:", error);
+  //   }
+  // };
 
   const handleAddSection = async () => {
     if (!sectionTitle.trim()) {
       alert("Section title cannot be empty!");
       return;
     }
-
     // Check for unique title
     const existingSection = sections.find(
       (section) => section.title === sectionTitle
@@ -97,13 +82,17 @@ export default function HomeScreen() {
       return;
     }
 
-    const newSection: Section = {
+    const newSection: SectionData = {
       title: sectionTitle,
+      goals: [], // Initialize with an empty goals array
+      totalScore: 0, // Initialize total score
+      completedScore: 0, // Initialize completed score
       color: sectionColor,
     };
+
     const updatedSections = [...sections, newSection];
-    setSections(updatedSections);
     await saveSections(updatedSections);
+    setSections(updatedSections);
     closeModal();
   };
 
@@ -127,8 +116,8 @@ export default function HomeScreen() {
         ? { ...section, title: sectionTitle, color: sectionColor }
         : section
     );
-    setSections(updatedSections);
     await saveSections(updatedSections);
+    setSections(updatedSections);
     closeModal();
   };
 
@@ -139,14 +128,31 @@ export default function HomeScreen() {
     const updatedGoals = goals.filter((goal) => goal.sectionTitle !== title);
 
     setSections(updatedSections);
-    setGoals(updatedGoals);
+    // setGoals(updatedGoals);
     await saveSections(updatedSections);
-    await saveGoals(updatedGoals);
+    // await saveGoals(updatedGoals);
   };
 
-  const saveSections = async (updatedSections: Section[]) => {
+  const saveSections = async (updatedSections: SectionData[]) => {
     try {
-      await AsyncStorage.setItem("sections", JSON.stringify(updatedSections));
+      const recordsData = await AsyncStorage.getItem("dailyRecords");
+      let dailyRecords: DailyRecord[] = recordsData
+        ? JSON.parse(recordsData)
+        : [];
+
+      const dailyRecordIndex = dailyRecords.findIndex(
+        (record) => record.date === selectedDate
+      );
+      if (dailyRecordIndex !== -1) {
+        dailyRecords[dailyRecordIndex].sections = updatedSections;
+      } else {
+        dailyRecords.push({
+          date: selectedDate,
+          sections: updatedSections,
+        });
+      }
+
+      await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));
     } catch (error) {
       console.error("Failed to save sections:", error);
     }
@@ -231,20 +237,14 @@ export default function HomeScreen() {
         <Header title="Goals" showDashboardButton={true} />
       </View>
       <FlatList
-        style={{ marginTop: 75 }}
+        style={{ marginTop: 95 }}
         data={sections}
         renderItem={renderSectionItem}
         keyExtractor={(item) => item.title} // Use title as unique key
         contentContainerStyle={styles.listContainer}
         keyboardShouldPersistTaps="handled"
       />
-      <TouchableOpacity
-        style={styles.floatingButton}
-        onPress={() => openModal("add")}
-      >
-        <MaterialIcons name="add" size={24} color="#000000" />
-      </TouchableOpacity>
-
+      <AddButton onPress={() => openModal("add")} />
       <Modal transparent={true} visible={modalVisible} animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -326,17 +326,6 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     marginHorizontal: 5,
-  },
-  floatingButton: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    backgroundColor: "#fff",
-    borderRadius: 30,
-    width: 60,
-    height: 60,
-    justifyContent: "center",
-    alignItems: "center",
   },
   modalOverlay: {
     flex: 1,

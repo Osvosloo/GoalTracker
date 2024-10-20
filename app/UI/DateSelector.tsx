@@ -6,7 +6,7 @@ import {
   StyleSheet,
   ScrollView,
 } from "react-native";
-import { SectionData } from "./types";
+import { SectionData } from "../types";
 
 interface DateSelectorProps {
   selectedDate: string;

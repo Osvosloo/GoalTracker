@@ -28,8 +28,17 @@ const Dashboard: React.FC = () => {
     new Date().toISOString().split("T")[0]
   );
 
+  // useEffect(() => {
+  //   if (weeklyStats) {
+  //     console.log("Weekly Stats:", JSON.stringify(weeklyStats, null, 2));
+  //   } else {
+  //     console.log("No weekly stats loaded yet");
+  //   }
+  // }, [weeklyStats]);
+
   useEffect(() => {
     loadDashboardData();
+    // loadWeeklyStats();
   }, []);
 
   useEffect(() => {
@@ -56,6 +65,40 @@ const Dashboard: React.FC = () => {
       console.error(`Error: No daily record found for date ${selectedDate}`);
     }
   };
+
+  // useEffect(() => {
+  //   // const todayDate = new Date().toISOString().split("T")[0]; // Get today's date
+  //   const todayDate = selectedDate; // Get today's date
+  //   const updatedFilteredData =
+  //     selectedSection === "all"
+  //       ? weeklyStats
+  //         ? weeklyStats.dailyCompletions[selectedDate] || []
+  //         : []
+  //       : sectionData.filter((section) => section.title === selectedSection);
+
+  //   // If the selected date is today, check if there's data for today
+  //   if (selectedDate === todayDate) {
+  //     // Filter the updatedFilteredData to find sections with goals for today
+  //     const todayData = updatedFilteredData.filter((section) =>
+  //       section.goals.some((goal) => {
+  //         // Convert creationDate to a Date object
+  //         const creationDate = new Date(goal.creationDate);
+
+  //         // Check if creationDate is valid
+  //         if (isNaN(creationDate.getTime())) {
+  //           console.error("Invalid creationDate for goal:", goal);
+  //           return false; // Skip this goal if the date is invalid
+  //         }
+
+  //         // Compare the date
+  //         return creationDate.toISOString().split("T")[0] === todayDate;
+  //       })
+  //     );
+  //     setFilteredData(todayData.length > 0 ? todayData : []);
+  //   } else {
+  //     setFilteredData(updatedFilteredData);
+  //   }
+  // }, [selectedSection, sectionData, weeklyStats, selectedDate]);
 
   const loadDashboardData = async () => {
     try {
@@ -224,6 +267,22 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
 
+  // dateSelector: {
+  //   flexDirection: "row",
+  //   justifyContent: "space-around",
+  //   marginBottom: 10,
+  // },
+  // dateButton: {
+  //   padding: 5,
+  //   borderRadius: 5,
+  //   backgroundColor: "#2c2c2c",
+  // },
+  // selectedDateButton: {
+  //   backgroundColor: "#7E57C2",
+  // },
+  // dateButtonText: {
+  //   color: "#fff",
+  // },
   statsContainer: {
     padding: 10,
     backgroundColor: "#2c2c2c",
