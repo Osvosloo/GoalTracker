@@ -16,3 +16,11 @@ export interface SectionData extends Section {
   totalScore: number;
   completedScore: number;
 }
+
+interface WeeklyStats {
+  dailyCompletions: {
+    [key: string]: SectionData[];
+  };
+  mostCompletedGoals: Goal[];
+  leastCompletedGoals: Goal[];
+}

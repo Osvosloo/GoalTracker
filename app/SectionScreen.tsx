@@ -213,7 +213,7 @@ export default function SectionScreen() {
       </View>
 
       <FlatList
-        style={{ marginTop: 75 }}
+        style={{ marginTop: 80 }}
         contentContainerStyle={styles.listContainer}
         data={goals}
         renderItem={renderGoalItem}
@@ -285,6 +285,7 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingHorizontal: 20,
     paddingTop: 5,
+    marginTop: 20,
     // flex: 1,
     // backgroundColor: "#7E57C2",
   },

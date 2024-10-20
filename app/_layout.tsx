@@ -1,14 +1,17 @@
 import { Stack } from "expo-router";
+import { createStackNavigator } from "@react-navigation/stack";
 
 export default function RootLayout() {
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerShown: false, // Apply globally to all screens
+      }}
+    >
       {/* Root screen for the app */}
-      <Stack.Screen
-        name="index"
-        options={{ title: "Home" }} // Set the title for the home screen
-      />
-      {/* You can add more screens here as needed */}
+      <Stack.Screen name="index" />
+      <Stack.Screen name="SectionScreen" />
+      <Stack.Screen name="DashboardScreen" />
     </Stack>
   );
 }

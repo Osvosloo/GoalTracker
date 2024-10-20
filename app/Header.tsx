@@ -5,10 +5,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  SafeAreaView,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Menu, Provider } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface HeaderProps {
   title: string;
@@ -21,6 +23,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
+  const insets = useSafeAreaInsets(); // Get safe area insets
 
   const toggleMenu = () => setMenuVisible((prev) => !prev);
 
@@ -35,8 +38,12 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <Provider>
-      <View style={styles.container}>
-        <StatusBar barStyle="light-content" />
+      <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]}>
+        <StatusBar
+          barStyle="light-content"
+          translucent
+          backgroundColor="transparent"
+        />
         <View style={styles.topBar}>
           <Menu
             visible={menuVisible}
@@ -46,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({
                 <MaterialIcons name="menu" size={30} color="#fff" />
               </TouchableOpacity>
             }
-            style={styles.menu} // Set a custom style for the Menu
+            style={styles.menu}
           >
             <Menu.Item
               onPress={() => handleMenuItemPress("/ProfileScreen")}
@@ -62,7 +69,7 @@ const Header: React.FC<HeaderProps> = ({
             />
           </Menu>
           <Text style={styles.header}>{title}</Text>
-          {showDashboardButton && ( // Conditionally render the dashboard button
+          {showDashboardButton && (
             <TouchableOpacity
               style={styles.dashboardButton}
               onPress={navigateToDashboard}
@@ -71,19 +78,14 @@ const Header: React.FC<HeaderProps> = ({
             </TouchableOpacity>
           )}
         </View>
-      </View>
+      </SafeAreaView>
     </Provider>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    width: "100%",
-    zIndex: 20,
+  safeArea: {
+    backgroundColor: "#1e1e1e",
   },
   topBar: {
     flexDirection: "row",
@@ -91,7 +93,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: 10,
     backgroundColor: "#1e1e1e",
-    height: 75,
+    height: 70, // Adjust height if necessary
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 10,
     width: "100%",
@@ -99,12 +101,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "#000",
   },
   header: {
-    // backgroundColor: "#7E57C2",
     color: "#fff",
     fontSize: 20,
-    flex: 1, // Allow the title to take up available space
+    flex: 1,
     textAlign: "center",
-    marginRight: 37,
+    marginRight: 37, // Adjust as needed
   },
   burgerMenu: {
     padding: 5,
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   menu: {
-    zIndex: 30, // Ensure the menu is above other components
+    zIndex: 30,
   },
 });
 
