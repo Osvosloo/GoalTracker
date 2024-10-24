@@ -6,6 +6,7 @@ import {
   Dimensions,
   FlatList,
   TouchableOpacity,
+  Platform,
 } from "react-native";
 import DonutChart from "./UI/DonutChart";
 import { DailyRecord, SectionData } from "./types";
@@ -15,6 +16,7 @@ import DashboardManager from "./DashboardComp/DashboardManager";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateSelector from "./UI/DateSelector";
 import { DailyCompletion, WeeklyStats, Goal, Section } from "./types";
+import SectionList from "./UI/SectionList";
 
 const Dashboard: React.FC = () => {
   const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
@@ -53,7 +55,6 @@ const Dashboard: React.FC = () => {
       setFilteredData(updatedFilteredData);
     } else {
       setFilteredData([]); // Clear the data if no record is found
-      console.error(`Error: No daily record found for date ${selectedDate}`);
     }
   };
 
@@ -73,8 +74,16 @@ const Dashboard: React.FC = () => {
       setSelectedSection(value);
     }
   };
-  const dropdownItems = dailyRecords
-    .flatMap((record) => record.sections)
+
+  const getSectionsForSelectedDate = () => {
+    const dailyRecord = dailyRecords.find(
+      (record) => record.date === selectedDate
+    );
+
+    return dailyRecord ? dailyRecord.sections : [];
+  };
+  const dropdownItems = getSectionsForSelectedDate()
+    .filter((section) => section.title !== selectedSection) // Exclude the selected section
     .map((section) => ({
       label: section.title,
       value: section.title,
@@ -92,7 +101,12 @@ const Dashboard: React.FC = () => {
   const sections = filteredData; //may neeed to add back to work   **********************************************************
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
+      <View
+        style={[
+          styles.topBar,
+          { marginBottom: Platform.OS === "web" ? 10 : 100 },
+        ]}
+      >
         <Header title="Dashboard" showDashboardButton={false} />
       </View>
       <DropDownMenu
@@ -106,43 +120,16 @@ const Dashboard: React.FC = () => {
         hasData={!!dailyRecords.find((record) => record.date === selectedDate)}
         filteredData={filteredData}
       />
-      {filteredData.length > 0 ? (
-        <View style={styles.chartContainer}>
+      <View style={styles.chartContainer}>
+        {filteredData.length > 0 && (
           <DonutChart
             data={filteredData.filter((section) => section.totalScore > 0)}
             width={chartWidth}
             height={chartHeight}
           />
-        </View>
-      ) : (
-        <Text style={styles.legendText}>
-          No Data available for {selectedDate}
-        </Text>
-      )}
-      <FlatList
-        data={filteredData}
-        renderItem={({ item }) => (
-          <View style={styles.legendItem}>
-            <View
-              style={[styles.legendColor, { backgroundColor: item.color }]}
-            />
-            <Text style={styles.legendText}>{item.title}</Text>
-            <Text style={styles.legendScore}>
-              {item.totalScore > 0
-                ? `${item.completedScore}/${item.totalScore}`
-                : "No Goals"}
-            </Text>
-            <Text style={styles.legendScore}>
-              {item.totalScore > 0
-                ? `${((item.completedScore / item.totalScore) * 100).toFixed(
-                    0
-                  )}%`
-                : "0%"}
-            </Text>
-          </View>
         )}
-        keyExtractor={(item) => item.title}
-      />
+      </View>
+      <SectionList filteredData={filteredData} />
       {weeklyStats && (
         <View style={styles.statsContainer}>
           <Text style={styles.statsHeader}>Weekly Stats</Text>
@@ -185,13 +172,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 100,
-  },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    backgroundColor: "#7E57C2",
-    // flex: 1,
   },
   chartContainer: {
     alignItems: "center",
@@ -200,30 +180,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginHorizontal: 16,
   },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    margin: 5,
-    marginHorizontal: 20,
-  },
-  legendColor: {
-    width: 10,
-    height: 20,
-    borderRadius: 10,
-    marginRight: 10,
-  },
-  legendText: {
-    color: "#fff",
-    fontSize: 16,
-    flex: 1,
-  },
-  legendScore: {
-    color: "#fff",
-    fontSize: 16,
-    width: 60,
-    textAlign: "right",
-  },
-
   statsContainer: {
     padding: 10,
     backgroundColor: "#2c2c2c",

@@ -6,15 +6,17 @@ import {
   TouchableOpacity,
   StatusBar,
   SafeAreaView,
+  Platform,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Menu, Provider } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import BurgerMenu from "./BurgerMenu";
 
 interface HeaderProps {
   title: string;
-  showDashboardButton?: boolean; // New prop to control visibility
+  showDashboardButton?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -23,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
-  const insets = useSafeAreaInsets(); // Get safe area insets
+  const insets = useSafeAreaInsets();
 
   const toggleMenu = () => setMenuVisible((prev) => !prev);
 
@@ -44,30 +46,10 @@ const Header: React.FC<HeaderProps> = ({
           translucent
           backgroundColor="transparent"
         />
-        <View style={styles.topBar}>
-          <Menu
-            visible={menuVisible}
-            onDismiss={() => setMenuVisible(false)}
-            anchor={
-              <TouchableOpacity style={styles.burgerMenu} onPress={toggleMenu}>
-                <MaterialIcons name="menu" size={30} color="#fff" />
-              </TouchableOpacity>
-            }
-            style={styles.menu}
-          >
-            <Menu.Item
-              onPress={() => handleMenuItemPress("/ProfileScreen")}
-              title="Profile"
-            />
-            <Menu.Item
-              onPress={() => handleMenuItemPress("/SettingsScreen")}
-              title="Settings"
-            />
-            <Menu.Item
-              onPress={() => handleMenuItemPress("/HelpScreen")}
-              title="Help"
-            />
-          </Menu>
+        <View style={[styles.topBar]}>
+          <TouchableOpacity style={styles.burgerMenu} onPress={toggleMenu}>
+            <MaterialIcons name="menu" size={30} color="#fff" />
+          </TouchableOpacity>
           <Text style={styles.header}>{title}</Text>
           {showDashboardButton && (
             <TouchableOpacity
@@ -78,6 +60,7 @@ const Header: React.FC<HeaderProps> = ({
             </TouchableOpacity>
           )}
         </View>
+        <BurgerMenu visible={menuVisible} onClose={toggleMenu} />
       </SafeAreaView>
     </Provider>
   );
@@ -85,7 +68,7 @@ const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: "#1e1e1e",
+    backgroundColor: "#121212",
   },
   topBar: {
     flexDirection: "row",
@@ -105,6 +88,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     flex: 1,
     textAlign: "center",
+    textAlignVertical: "center",
     marginRight: 37, // Adjust as needed
   },
   burgerMenu: {

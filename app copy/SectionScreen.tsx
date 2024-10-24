@@ -7,15 +7,19 @@ import {
   FlatList,
   Modal,
   TextInput,
-  Platform,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Goal, DailyRecord } from "./types";
-import Header from "./Components/Header";
-import AddButton from "./UI/AddButton";
+
+interface Goal {
+  id: string;
+  name: string;
+  score: number;
+  completed: boolean;
+  sectionTitle: string;
+}
 
 export default function SectionScreen() {
   const params = useLocalSearchParams();
@@ -33,9 +37,6 @@ export default function SectionScreen() {
   const [editGoalId, setEditGoalId] = useState<string | null>(null);
   const [activeGoal, setActiveGoal] = useState<string | null>(null);
   const [sectionTitle, setSectionTitle] = useState<string>(""); // Changed to sectionTitle
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
 
   useEffect(() => {
     const initializeSection = async () => {
@@ -51,25 +52,17 @@ export default function SectionScreen() {
     if (sectionTitle) {
       loadGoals();
     }
-  }, [sectionTitle, selectedDate]);
+  }, [sectionTitle]);
 
   const loadGoals = async () => {
     try {
-      const recordsData = await AsyncStorage.getItem("dailyRecords");
-      if (recordsData) {
-        const dailyRecords: DailyRecord[] = JSON.parse(recordsData);
-        const dailyRecord = dailyRecords.find(
-          (record) => record.date === selectedDate
+      const storedGoals = await AsyncStorage.getItem("goals");
+      if (storedGoals) {
+        const allGoals: Goal[] = JSON.parse(storedGoals);
+        const sectionGoals = allGoals.filter(
+          (goal) => goal.sectionTitle === sectionTitle // Use sectionTitle for filtering
         );
-        if (dailyRecord) {
-          const sectionGoals =
-            dailyRecord.sections.find(
-              (section) => section.title === sectionTitle
-            )?.goals || [];
-          setGoals(sectionGoals);
-        } else {
-          setGoals([]); // Clear goals if no record is found for the selected date
-        }
+        setGoals(sectionGoals);
       }
     } catch (error) {
       console.error("Failed to load goals:", error);
@@ -86,8 +79,7 @@ export default function SectionScreen() {
       name: goalName,
       score: goalScore,
       completed: false,
-      sectionTitle: sectionTitle,
-      creationDate: new Date(),
+      sectionTitle: sectionTitle, // Use sectionTitle
     };
     const updatedGoals = [...goals, newGoal];
     setGoals(updatedGoals);
@@ -97,62 +89,16 @@ export default function SectionScreen() {
 
   const saveGoals = async (updatedGoals: Goal[]) => {
     try {
-      const recordsData = await AsyncStorage.getItem("dailyRecords");
-      let dailyRecords: DailyRecord[] = recordsData
-        ? JSON.parse(recordsData)
-        : [];
+      const storedGoals = await AsyncStorage.getItem("goals");
+      let allGoals: Goal[] = storedGoals ? JSON.parse(storedGoals) : [];
 
-      // Update the goals in the correct daily record
-      const dailyRecordIndex = dailyRecords.findIndex(
-        (record) => record.date === selectedDate
-      );
-      if (dailyRecordIndex !== -1) {
-        const dailyRecord = dailyRecords[dailyRecordIndex];
-        const updatedSections = dailyRecord.sections.map((section) => {
-          if (section.title === sectionTitle) {
-            return {
-              ...section,
-              goals: updatedGoals,
-              totalScore: calculateTotalScore(updatedGoals), // Calculate total score
-              completedScore: calculateCompletedScore(updatedGoals), // Calculate completed score
-              color: section.color, // Retain the existing color or set a new one
-            }; // Update goals for the specific section
-          }
-          return section;
-        });
-        dailyRecords[dailyRecordIndex] = {
-          ...dailyRecord,
-          sections: updatedSections,
-        };
-      } else {
-        // Create a new daily record if it doesn't exist
-        dailyRecords.push({
-          date: selectedDate,
-          sections: [
-            {
-              title: sectionTitle,
-              goals: updatedGoals,
-              totalScore: calculateTotalScore(updatedGoals), // Calculate total score
-              completedScore: calculateCompletedScore(updatedGoals), // Calculate completed score
-              color: "#FFFFFF", // Set a default color or use a specific one
-            },
-          ],
-        });
-      }
+      allGoals = allGoals.filter((goal) => goal.sectionTitle !== sectionTitle); // Use sectionTitle for filtering
+      allGoals = [...allGoals, ...updatedGoals];
 
-      await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));
+      await AsyncStorage.setItem("goals", JSON.stringify(allGoals));
     } catch (error) {
       console.error("Failed to save goals:", error);
     }
-  };
-  const calculateTotalScore = (goals: Goal[]): number => {
-    return goals.reduce((total, goal) => total + goal.score, 0);
-  };
-  const calculateCompletedScore = (goals: Goal[]): number => {
-    return goals.reduce(
-      (total, goal) => (goal.completed ? total + goal.score : total),
-      0
-    );
   };
 
   const handleUpdateGoal = async () => {
@@ -209,7 +155,7 @@ export default function SectionScreen() {
   };
 
   const getScoreColor = (score: number) => {
-    const colors = ["#00FF00", "#7FFF00", "#FFFF00", "#FF7F00", "#FF0000"];
+    const colors = ["#4CAF50", "#8BC34A", "#FFEB3B", "#FF9800", "#F44336"];
     return colors[score - 1];
   };
 
@@ -234,22 +180,13 @@ export default function SectionScreen() {
       <View style={styles.iconContainer}>
         {activeGoal === item.id ? (
           <>
-            <TouchableOpacity
-              onPress={() => openModal("edit", item.id)}
-              style={styles.iconButton}
-            >
+            <TouchableOpacity onPress={() => openModal("edit", item.id)}>
               <MaterialIcons name="edit" size={24} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => handleDeleteGoal(item.id)}
-              style={styles.iconButton}
-            >
+            <TouchableOpacity onPress={() => handleDeleteGoal(item.id)}>
               <MaterialIcons name="delete" size={24} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setActiveGoal(null)}
-              style={styles.closeButton}
-            >
+            <TouchableOpacity onPress={() => setActiveGoal(null)}>
               <MaterialIcons name="close" size={24} color="#fff" />
             </TouchableOpacity>
           </>
@@ -267,23 +204,18 @@ export default function SectionScreen() {
 
   return (
     <View style={styles.container}>
-      <View
-        style={[
-          styles.topBar,
-          { marginBottom: Platform.OS === "web" ? 0 : 95 },
-        ]}
-      >
-        <Header title={title} showDashboardButton={true} />
-      </View>
-
+      <Text style={styles.header}>{title}</Text>
       <FlatList
-        contentContainerStyle={styles.listContainer}
         data={goals}
         renderItem={renderGoalItem}
         keyExtractor={(item) => item.id}
-        keyboardShouldPersistTaps="handled"
       />
-      <AddButton onPress={() => openModal("add")} />
+      <TouchableOpacity
+        style={styles.floatingButton}
+        onPress={() => openModal("add")}
+      >
+        <MaterialIcons name="add" size={24} color="#fff" />
+      </TouchableOpacity>
 
       <Modal transparent={true} visible={modalVisible} animationType="slide">
         <View style={styles.modalOverlay}>
@@ -333,28 +265,30 @@ export default function SectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 20,
     backgroundColor: "#121212",
   },
-  topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 5,
-    // flex: 1,
-    // backgroundColor: "#7E57C2",
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff",
+    textAlign: "center",
+    marginVertical: 20,
   },
   goalItemContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#2c2c2c",
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 5,
-    padding: 15,
+    justifyContent: "space-between",
+    backgroundColor: "#1E1E1E",
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 16,
+    borderRadius: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 3,
   },
   goalItem: {
     flex: 1,
@@ -365,7 +299,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     color: "#fff",
-    // flex: 1,
+    flex: 1,
     marginLeft: 10,
   },
   completedGoal: {
@@ -373,31 +307,40 @@ const styles = StyleSheet.create({
     color: "#888",
   },
   scoreIndicator: {
-    width: 18,
+    width: 30,
     height: 30,
     borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
   },
   scoreText: {
-    color: "#000000",
+    color: "#fff",
     fontWeight: "bold",
   },
   iconContainer: {
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center",
-    width: 90,
-  },
-  iconButton: {
-    padding: 3,
-  },
-  closeButton: {
-    padding: 5,
-    marginLeft: "auto", // Push close button to the right
+    width: 120,
   },
   menuButton: {
     padding: 5,
+  },
+  floatingButton: {
+    position: "absolute",
+    right: 20,
+    bottom: 20,
+    backgroundColor: "#7E57C2",
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 3,
   },
   modalOverlay: {
     flex: 1,
@@ -440,11 +383,7 @@ const styles = StyleSheet.create({
   },
   modalButtonText: {
     fontSize: 18,
-    color: "#fff",
-    padding: 10,
-  },
-
-  dashboardButton: {
+    color: "#7E57C2",
     padding: 10,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -21,6 +21,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
   hasData,
 }) => {
   const [dates, setDates] = useState<string[]>([]);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     const generatePastWeekDates = () => {
@@ -30,7 +31,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
         date.setDate(date.getDate() - i);
         dateArray.push(date.toISOString().split("T")[0]);
       }
-      return dateArray; // Show oldest to newest
+      return dateArray;
     };
 
     setDates(generatePastWeekDates());
@@ -54,9 +55,32 @@ const DateSelector: React.FC<DateSelectorProps> = ({
     });
   };
 
+  const handleDateChange = (date: string) => {
+    onDateChange(date);
+    const index = dates.indexOf(date);
+    const buttonWidth = 100;
+
+    if (index === 0) {
+      // If it's the first date, scroll to the left edge
+      scrollViewRef.current?.scrollTo({ x: 0, animated: true });
+    } else if (index === dates.length - 1) {
+      // If it's the last date, scroll to the right edge
+      const totalWidth = dates.length * buttonWidth; // Total width of all buttons
+      scrollViewRef.current?.scrollTo({
+        x: totalWidth - buttonWidth,
+        animated: true,
+      });
+    } else {
+      // Center the selected date if it's not the first or last
+      const offset = (index - 1) * buttonWidth;
+      scrollViewRef.current?.scrollTo({ x: offset, animated: true });
+    }
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView
+        ref={scrollViewRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -68,7 +92,7 @@ const DateSelector: React.FC<DateSelectorProps> = ({
               styles.dateButton,
               date === selectedDate && styles.selectedDateButton,
             ]}
-            onPress={() => onDateChange(date)}
+            onPress={() => handleDateChange(date)}
           >
             <Text
               style={[

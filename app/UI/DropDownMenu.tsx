@@ -53,7 +53,7 @@ const DropDownMenu: React.FC<DropDownMenuProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 10,
+    // marginBottom: 10,
     marginHorizontal: 16,
   },
   dropdown: {

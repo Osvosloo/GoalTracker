@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,72 +8,93 @@ import {
   StatusBar,
   Modal,
   TextInput,
-  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Section, Goal, DailyRecord, SectionData } from "./types";
-import Header from "./Components/Header";
-import DashboardManager from "./DashboardComp/DashboardManager";
-import ColorPicker from "./HomeComp/ColorPicker";
-import AddButton from "./UI/AddButton";
+
+interface Section {
+  title: string;
+  color: string;
+}
+
+interface Goal {
+  id: string;
+  name: string;
+  score: number;
+  completed: boolean;
+  sectionTitle: string; // Use title as the identifier
+}
+
+const ColorPicker = ({
+  onColorSelect,
+}: {
+  onColorSelect: (color: string) => void;
+}) => {
+  const colors = [
+    "#39FF14",
+    "#FF3503",
+    "#00FFE5",
+    "#FF1493",
+    "#8A2BE2",
+    "#FE59C2",
+  ];
+
+  return (
+    <View style={styles.colorPickerContainer}>
+      {colors.map((color) => (
+        <TouchableOpacity
+          key={color}
+          style={[styles.colorOption, { backgroundColor: color }]}
+          onPress={() => onColorSelect(color)}
+        />
+      ))}
+    </View>
+  );
+};
 
 export default function HomeScreen() {
-  const [sections, setSections] = useState<SectionData[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit">("add");
   const [sectionTitle, setSectionTitle] = useState("");
-  const [activeSectionTitle, setActiveSectionTitle] = useState("");
-  const sectionTitleInputRef = useRef<TextInput>(null);
   const [sectionColor, setSectionColor] = useState("#000000");
   const router = useRouter();
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
 
   useEffect(() => {
     loadSections();
-    checkAndResetGoals();
+    loadGoals();
   }, []);
 
   const loadSections = async () => {
     try {
-      const recordsData = await AsyncStorage.getItem("dailyRecords");
-      if (recordsData) {
-        const dailyRecords: DailyRecord[] = JSON.parse(recordsData);
-        const dailyRecord = dailyRecords.find(
-          (record) => record.date === selectedDate
-        );
-        if (dailyRecord) {
-          setSections(dailyRecord.sections);
-        } else {
-          setSections([]); // Clear sections if no record is found for the selected date
-        }
+      const storedSections = await AsyncStorage.getItem("sections");
+      if (storedSections) {
+        setSections(JSON.parse(storedSections));
       }
     } catch (error) {
       console.error("Failed to load sections:", error);
     }
   };
 
-  // const loadGoals = async () => {
-  //   try {
-  //     const storedGoals = await AsyncStorage.getItem("goals");
-  //     if (storedGoals) {
-  //       console.log(storedGoals);
-  //       setGoals(JSON.parse(storedGoals));
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to load goals:", error);
-  //   }
-  // };
+  const loadGoals = async () => {
+    try {
+      const storedGoals = await AsyncStorage.getItem("goals");
+      if (storedGoals) {
+        setGoals(JSON.parse(storedGoals));
+      }
+    } catch (error) {
+      console.error("Failed to load goals:", error);
+    }
+  };
 
   const handleAddSection = async () => {
     if (!sectionTitle.trim()) {
       alert("Section title cannot be empty!");
       return;
     }
+
     // Check for unique title
     const existingSection = sections.find(
       (section) => section.title === sectionTitle
@@ -83,49 +104,14 @@ export default function HomeScreen() {
       return;
     }
 
-    try {
-      // First, get the current daily records
-      const recordsData = await AsyncStorage.getItem("dailyRecords");
-      let dailyRecords: DailyRecord[] = recordsData
-        ? JSON.parse(recordsData)
-        : [];
-
-      // Find the current day's record
-      let currentDayRecord = dailyRecords.find(
-        (record) => record.date === selectedDate
-      );
-
-      // Initialize a new section
-      const newSection: SectionData = {
-        title: sectionTitle,
-        goals: [],
-        totalScore: 0,
-        completedScore: 0,
-        color: sectionColor,
-      };
-
-      if (currentDayRecord) {
-        // If we have a record for today, add the new section while preserving existing sections
-        currentDayRecord.sections = [...currentDayRecord.sections, newSection];
-      } else {
-        // If no record exists for today, create a new one
-        currentDayRecord = {
-          date: selectedDate,
-          sections: [newSection],
-        };
-        dailyRecords.push(currentDayRecord);
-      }
-
-      // Save the updated records
-      await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));
-
-      // Update local state
-      setSections(currentDayRecord.sections);
-      closeModal();
-    } catch (error) {
-      console.error("Failed to add section:", error);
-      alert("Failed to add section. Please try again.");
-    }
+    const newSection: Section = {
+      title: sectionTitle,
+      color: sectionColor,
+    };
+    const updatedSections = [...sections, newSection];
+    setSections(updatedSections);
+    await saveSections(updatedSections);
+    closeModal();
   };
 
   const handleUpdateSection = async () => {
@@ -134,22 +120,22 @@ export default function HomeScreen() {
       return;
     }
 
+    // Check for unique title
     const existingSection = sections.find(
-      (section) =>
-        section.title === sectionTitle && section.title !== activeSectionTitle
+      (section) => section.title === sectionTitle
     );
-    if (existingSection) {
+    if (existingSection && existingSection.title !== sectionTitle) {
       alert("Section title must be unique!");
       return;
     }
 
     const updatedSections = sections.map((section) =>
-      section.title === activeSectionTitle
+      section.title === sectionTitle
         ? { ...section, title: sectionTitle, color: sectionColor }
         : section
     );
-    await saveSections(updatedSections);
     setSections(updatedSections);
+    await saveSections(updatedSections);
     closeModal();
   };
 
@@ -158,94 +144,50 @@ export default function HomeScreen() {
       (section) => section.title !== title
     );
     const updatedGoals = goals.filter((goal) => goal.sectionTitle !== title);
-    await saveSections(updatedSections);
-    setSections(updatedSections);
-    // setGoals(updatedGoals);
 
-    // await saveGoals(updatedGoals);
+    setSections(updatedSections);
+    setGoals(updatedGoals);
+    await saveSections(updatedSections);
+    await saveGoals(updatedGoals);
   };
 
-  const saveSections = async (updatedSections: SectionData[]) => {
+  const saveSections = async (updatedSections: Section[]) => {
     try {
-      const recordsData = await AsyncStorage.getItem("dailyRecords");
-      let dailyRecords: DailyRecord[] = recordsData
-        ? JSON.parse(recordsData)
-        : [];
-
-      const dailyRecordIndex = dailyRecords.findIndex(
-        (record) => record.date === selectedDate
-      );
-
-      if (dailyRecordIndex !== -1) {
-        // Preserve the goals of sections that weren't modified
-        const updatedSectionsWithPreservedGoals = updatedSections.map(
-          (updatedSection) => {
-            const existingSection = dailyRecords[
-              dailyRecordIndex
-            ].sections.find(
-              (section) => section.title === updatedSection.title
-            );
-            return existingSection
-              ? { ...updatedSection, goals: existingSection.goals }
-              : updatedSection;
-          }
-        );
-
-        dailyRecords[dailyRecordIndex].sections =
-          updatedSectionsWithPreservedGoals;
-      } else {
-        dailyRecords.push({
-          date: selectedDate,
-          sections: updatedSections,
-        });
-      }
-
-      await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));
+      await AsyncStorage.setItem("sections", JSON.stringify(updatedSections));
     } catch (error) {
       console.error("Failed to save sections:", error);
     }
   };
 
-  // const saveGoals = async (updatedGoals: Goal[]) => {
-  //   try {
-  //     await AsyncStorage.setItem("goals", JSON.stringify(updatedGoals));
-  //   } catch (error) {
-  //     console.error("Failed to save goals:", error);
-  //   }
-  // };
-
-  const checkAndResetGoals = async () => {
-    const lastResetDate = await AsyncStorage.getItem("lastResetDate");
-    const today = new Date().toISOString().split("T")[0];
-
-    if (lastResetDate !== today) {
-      await DashboardManager.storeCompletedGoals();
-      await DashboardManager.resetDailyGoals();
-      await AsyncStorage.setItem("lastResetDate", today);
+  const saveGoals = async (updatedGoals: Goal[]) => {
+    try {
+      await AsyncStorage.setItem("goals", JSON.stringify(updatedGoals));
+    } catch (error) {
+      console.error("Failed to save goals:", error);
     }
   };
+
   const openModal = (type: "add" | "edit", title?: string) => {
     setModalType(type);
     if (type === "edit" && title) {
       const section = sections.find((s) => s.title === title);
-      setActiveSectionTitle(section?.title || "");
       setSectionTitle(section?.title || "");
       setSectionColor(section?.color || "#000000");
     } else {
-      setActiveSectionTitle("");
       setSectionTitle("");
       setSectionColor("#000000");
     }
     setModalVisible(true);
-    setTimeout(() => {
-      sectionTitleInputRef.current?.focus();
-    }, 100);
   };
 
   const closeModal = () => {
     setModalVisible(false);
     setSectionTitle("");
     setSectionColor("#000000");
+  };
+
+  const navigateToDashboard = () => {
+    router.push("/DashboardScreen");
   };
 
   const renderSectionItem = ({ item }: { item: Section }) => (
@@ -263,16 +205,10 @@ export default function HomeScreen() {
         <Text style={styles.sectionTitle}>{item.title}</Text>
       </TouchableOpacity>
       <View style={styles.iconContainer}>
-        <TouchableOpacity
-          onPress={() => openModal("edit", item.title)}
-          style={styles.editButton}
-        >
+        <TouchableOpacity onPress={() => openModal("edit", item.title)}>
           <MaterialIcons name="edit" size={24} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => handleDelete(item.title)}
-          style={styles.deleteButton}
-        >
+        <TouchableOpacity onPress={() => handleDelete(item.title)}>
           <MaterialIcons name="delete" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -281,18 +217,33 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
       <View style={styles.topBar}>
-        <Header title="Goals" showDashboardButton={true} />
+        <TouchableOpacity style={styles.burgerMenu}>
+          <MaterialIcons name="menu" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.header}>Goals</Text>
+        <TouchableOpacity
+          style={styles.dashboardButton}
+          onPress={navigateToDashboard}
+        >
+          <MaterialIcons name="dashboard" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
+
       <FlatList
-        style={{ marginTop: Platform.OS === "web" ? 0 : 95 }}
         data={sections}
         renderItem={renderSectionItem}
         keyExtractor={(item) => item.title} // Use title as unique key
         contentContainerStyle={styles.listContainer}
-        keyboardShouldPersistTaps="handled"
       />
-      <AddButton onPress={() => openModal("add")} />
+      <TouchableOpacity
+        style={styles.floatingButton}
+        onPress={() => openModal("add")}
+      >
+        <MaterialIcons name="add" size={24} color="#fff" />
+      </TouchableOpacity>
+
       <Modal transparent={true} visible={modalVisible} animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -300,10 +251,9 @@ export default function HomeScreen() {
               {modalType === "add" ? "New Section" : "Edit Section"}
             </Text>
             <TextInput
-              ref={sectionTitleInputRef}
               style={[
                 styles.textInput,
-                { borderColor: sectionColor, borderWidth: 1 },
+                { borderColor: sectionColor, borderWidth: 2 },
               ]}
               placeholder="Enter section title"
               placeholderTextColor="#aaa"
@@ -336,18 +286,26 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#121212",
+    backgroundColor: "#1e1e1e",
+    paddingTop: StatusBar.currentHeight,
   },
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#fff",
+    textAlign: "center",
+    // marginBottom: 5,
   },
   listContainer: {
     paddingHorizontal: 20,
-    paddingTop: 10,
-    // backgroundColor: "#7E57C2",
-    // flex: 1,
   },
   sectionItemContainer: {
     flexDirection: "row",
@@ -355,7 +313,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#2c2c2c",
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 2,
     marginBottom: 10,
     padding: 15,
   },
@@ -369,11 +327,22 @@ const styles = StyleSheet.create({
   iconContainer: {
     flexDirection: "row",
   },
-  editButton: {
-    marginHorizontal: 5,
+  burgerMenu: {
+    padding: 5,
   },
-  deleteButton: {
-    marginHorizontal: 5,
+  dashboardButton: {
+    padding: 10,
+  },
+  floatingButton: {
+    position: "absolute",
+    right: 20,
+    bottom: 20,
+    backgroundColor: "#007AFF",
+    borderRadius: 30,
+    width: 60,
+    height: 60,
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalOverlay: {
     flex: 1,
@@ -437,7 +406,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   modalButtonText: {
-    color: "#fff",
+    color: "#007AFF",
     fontSize: 18,
   },
 });
