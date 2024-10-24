@@ -248,17 +248,40 @@ export default function HomeScreen() {
     setSectionColor("#000000");
   };
 
-  const renderSectionItem = ({ item }: { item: Section }) => (
+  const handleSectionPress = async (sectionTitle: string, color: string) => {
+    try {
+      const sectionData = await DashboardManager.loadSectionData(
+        selectedDate,
+        sectionTitle
+      );
+      if (sectionData) {
+        router.push({
+          pathname: "/SectionScreen",
+          params: {
+            title: sectionTitle,
+            color: color,
+            date: selectedDate,
+            goalsData: JSON.stringify(sectionData.goals),
+          },
+        });
+      } else {
+        console.error(
+          "No section data found for:",
+          sectionTitle,
+          "on date:",
+          selectedDate
+        );
+      }
+    } catch (error) {
+      console.error("Error navigating to section:", error);
+    }
+  };
+
+  const renderSectionItem = ({ item }: { item: SectionData }) => (
     <View style={[styles.sectionItemContainer, { borderColor: item.color }]}>
       <TouchableOpacity
         style={styles.sectionItem}
-        onPress={() =>
-          router.push(
-            `/SectionScreen?title=${encodeURIComponent(
-              item.title
-            )}&color=${encodeURIComponent(item.color)}`
-          )
-        }
+        onPress={() => handleSectionPress(item.title, item.color)}
       >
         <Text style={styles.sectionTitle}>{item.title}</Text>
       </TouchableOpacity>
@@ -292,7 +315,10 @@ export default function HomeScreen() {
         contentContainerStyle={styles.listContainer}
         keyboardShouldPersistTaps="handled"
       />
-      <AddButton onPress={() => openModal("add")} />
+      <AddButton
+        onPress={() => openModal("add")}
+        tooltipText="Add a new Section"
+      />
       <Modal transparent={true} visible={modalVisible} animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>

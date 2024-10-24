@@ -5,9 +5,82 @@ import {
   Goal,
   Section,
   SectionData,
+  DailyRecord,
 } from "../types";
 
 export const DashboardManager = {
+  async loadSectionData(
+    date: string,
+    sectionTitle: string
+  ): Promise<SectionData | null> {
+    try {
+      const recordsData = await AsyncStorage.getItem("dailyRecords");
+      if (!recordsData) return null;
+
+      const dailyRecords: DailyRecord[] = JSON.parse(recordsData);
+      const dayRecord = dailyRecords.find((record) => record.date === date);
+
+      if (!dayRecord) return null;
+
+      return (
+        dayRecord.sections.find((section) => section.title === sectionTitle) ||
+        null
+      );
+    } catch (error) {
+      console.error("Error loading section data:", error);
+      return null;
+    }
+  },
+
+  async getDailyRecord(date: string): Promise<DailyRecord | null> {
+    try {
+      const recordsData = await AsyncStorage.getItem("dailyRecords");
+      if (!recordsData) return null;
+
+      const dailyRecords: DailyRecord[] = JSON.parse(recordsData);
+      return dailyRecords.find((record) => record.date === date) || null;
+    } catch (error) {
+      console.error("Error getting daily record:", error);
+      return null;
+    }
+  },
+
+  async updateSectionGoals(
+    date: string,
+    sectionTitle: string,
+    goals: Goal[]
+  ): Promise<boolean> {
+    try {
+      const recordsData = await AsyncStorage.getItem("dailyRecords");
+      if (!recordsData) return false;
+
+      const dailyRecords: DailyRecord[] = JSON.parse(recordsData);
+      const recordIndex = dailyRecords.findIndex(
+        (record) => record.date === date
+      );
+
+      if (recordIndex === -1) return false;
+
+      const sectionIndex = dailyRecords[recordIndex].sections.findIndex(
+        (section) => section.title === sectionTitle
+      );
+
+      if (sectionIndex === -1) return false;
+
+      // Update the goals while maintaining other section properties
+      dailyRecords[recordIndex].sections[sectionIndex] = {
+        ...dailyRecords[recordIndex].sections[sectionIndex],
+        goals,
+      };
+
+      await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));
+      return true;
+    } catch (error) {
+      console.error("Error updating section goals:", error);
+      return false;
+    }
+  },
+
   resetDailyGoals: async () => {
     try {
       const goalsData = await AsyncStorage.getItem("goals");

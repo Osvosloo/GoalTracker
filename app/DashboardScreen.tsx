@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateSelector from "./UI/DateSelector";
 import { DailyCompletion, WeeklyStats, Goal, Section } from "./types";
 import SectionList from "./UI/SectionList";
+import { router, Router } from "expo-router";
 
 const Dashboard: React.FC = () => {
   const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
@@ -29,7 +30,8 @@ const Dashboard: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
-
+  const [isHistoricalView, setIsHistoricalView] = useState(false);
+  router;
   useEffect(() => {
     loadDashboardData();
   }, []);
@@ -82,6 +84,7 @@ const Dashboard: React.FC = () => {
 
     return dailyRecord ? dailyRecord.sections : [];
   };
+
   const dropdownItems = getSectionsForSelectedDate()
     .filter((section) => section.title !== selectedSection) // Exclude the selected section
     .map((section) => ({
@@ -91,7 +94,10 @@ const Dashboard: React.FC = () => {
 
   const handleDateChange = async (date: string) => {
     setSelectedDate(date);
-    // await loadDashboardData(); // Reload data for the new date
+    const today = new Date().toISOString().split("T")[0];
+    const isHistorical = date !== today; // Check if the selected date is historical
+    setIsHistoricalView(isHistorical); // Set the historical view state
+    await loadDashboardData(); // Optionally reload data for the new date
   };
 
   const chartWidth = Dimensions.get("window").width - 32;
@@ -129,7 +135,11 @@ const Dashboard: React.FC = () => {
           />
         )}
       </View>
-      <SectionList filteredData={filteredData} />
+      {/* <SectionList filteredData={filteredData} /> */}
+      <SectionList
+        filteredData={filteredData}
+        isHistorical={isHistoricalView} // Pass isHistoricalView state
+      />
       {weeklyStats && (
         <View style={styles.statsContainer}>
           <Text style={styles.statsHeader}>Weekly Stats</Text>

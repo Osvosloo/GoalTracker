@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Menu, Provider } from "react-native-paper";
+import { Menu, Provider, Tooltip } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BurgerMenu from "./BurgerMenu";
 
@@ -50,14 +50,21 @@ const Header: React.FC<HeaderProps> = ({
           <TouchableOpacity style={styles.burgerMenu} onPress={toggleMenu}>
             <MaterialIcons name="menu" size={30} color="#fff" />
           </TouchableOpacity>
+
           <Text style={styles.header}>{title}</Text>
           {showDashboardButton && (
-            <TouchableOpacity
-              style={styles.dashboardButton}
-              onPress={navigateToDashboard}
+            <Tooltip
+              title="Go to Dashboard"
+              enterTouchDelay={200}
+              leaveTouchDelay={200}
             >
-              <MaterialIcons name="dashboard" size={24} color="#fff" />
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.dashboardButton}
+                onPress={navigateToDashboard}
+              >
+                <MaterialIcons name="dashboard" size={24} color="#fff" />
+              </TouchableOpacity>
+            </Tooltip>
           )}
         </View>
         <BurgerMenu visible={menuVisible} onClose={toggleMenu} />

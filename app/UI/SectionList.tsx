@@ -11,16 +11,22 @@ import { SectionData } from "../types";
 
 interface SectionListProps {
   filteredData: SectionData[];
+  isHistorical: boolean; // Add isHistorical prop
 }
 
-const SectionList: React.FC<SectionListProps> = ({ filteredData }) => {
+const SectionList: React.FC<SectionListProps> = ({
+  filteredData,
+  isHistorical,
+}) => {
   const router = useRouter();
 
   const handleSectionPress = (section: SectionData) => {
     router.push(
       `/SectionScreen?title=${encodeURIComponent(
         section.title
-      )}&color=${encodeURIComponent(section.color)}`
+      )}&color=${encodeURIComponent(
+        section.color
+      )}&isHistorical=${isHistorical}`
     );
   };
 

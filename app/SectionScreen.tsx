@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Platform,
+  Alert,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
@@ -16,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Goal, DailyRecord } from "./types";
 import Header from "./Components/Header";
 import AddButton from "./UI/AddButton";
+// import DashboardManager from "./DashboardComp/DashboardManager";
 
 export default function SectionScreen() {
   const params = useLocalSearchParams();
@@ -25,6 +27,9 @@ export default function SectionScreen() {
   const color = Array.isArray(params.color)
     ? params.color[0]
     : params.color || "#000000";
+  const dateParam = Array.isArray(params.date) ? params.date[0] : params.date;
+  const isHistoricalView = params.isHistorical === "true";
+
   const [goals, setGoals] = useState<Goal[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit">("add");
@@ -42,7 +47,7 @@ export default function SectionScreen() {
       const titleParam = Array.isArray(params.title)
         ? params.title[0]
         : params.title;
-      setSectionTitle(titleParam || ""); // Set section title
+      setSectionTitle(titleParam || "");
     };
     initializeSection();
   }, [params.title]);
@@ -53,6 +58,12 @@ export default function SectionScreen() {
     }
   }, [sectionTitle, selectedDate]);
 
+  // useEffect(() => {
+  //   const today = new Date().toISOString().split("T")[0];
+  //   setIsHistoricalView(selectedDate !== today);
+  //   loadGoals();
+  // }, [selectedDate, title]);
+
   const loadGoals = async () => {
     try {
       const recordsData = await AsyncStorage.getItem("dailyRecords");
@@ -61,38 +72,53 @@ export default function SectionScreen() {
         const dailyRecord = dailyRecords.find(
           (record) => record.date === selectedDate
         );
+
         if (dailyRecord) {
-          const sectionGoals =
-            dailyRecord.sections.find(
-              (section) => section.title === sectionTitle
-            )?.goals || [];
-          setGoals(sectionGoals);
-        } else {
-          setGoals([]); // Clear goals if no record is found for the selected date
+          const sectionData = dailyRecord.sections.find(
+            (section) => section.title === title
+          );
+          if (sectionData) {
+            console.log("do it");
+            console.log("Goals loaded:", sectionData.goals);
+            setGoals(sectionData.goals || []);
+            return;
+          }
         }
       }
+      setGoals([]);
     } catch (error) {
       console.error("Failed to load goals:", error);
+      Alert.alert("Error", "Failed to load goals");
     }
   };
 
   const handleAddGoal = async () => {
+    if (isHistoricalView) {
+      console.log("history");
+      Alert.alert("Notice", "Cannot add goals to past dates");
+      return;
+    }
     if (!goalName.trim()) {
       alert("Goal name cannot be empty!");
       return;
     }
     const newGoal: Goal = {
       id: Date.now().toString(),
-      name: goalName,
+      name: goalName.trim(),
       score: goalScore,
       completed: false,
       sectionTitle: sectionTitle,
       creationDate: new Date(),
     };
-    const updatedGoals = [...goals, newGoal];
-    setGoals(updatedGoals);
-    await saveGoals(updatedGoals);
-    closeModal();
+    try {
+      const updatedGoals = [...goals, newGoal];
+      await saveGoals(updatedGoals);
+      setGoals(updatedGoals);
+      closeModal();
+    } catch (error) {
+      console.error("Failed to add goal:", error);
+      Alert.alert("Error", "Failed to add goal");
+    }
   };
 
   const saveGoals = async (updatedGoals: Goal[]) => {
@@ -102,39 +128,41 @@ export default function SectionScreen() {
         ? JSON.parse(recordsData)
         : [];
 
-      // Update the goals in the correct daily record
-      const dailyRecordIndex = dailyRecords.findIndex(
+      const recordIndex = dailyRecords.findIndex(
         (record) => record.date === selectedDate
       );
-      if (dailyRecordIndex !== -1) {
-        const dailyRecord = dailyRecords[dailyRecordIndex];
-        const updatedSections = dailyRecord.sections.map((section) => {
-          if (section.title === sectionTitle) {
-            return {
-              ...section,
-              goals: updatedGoals,
-              totalScore: calculateTotalScore(updatedGoals), // Calculate total score
-              completedScore: calculateCompletedScore(updatedGoals), // Calculate completed score
-              color: section.color, // Retain the existing color or set a new one
-            }; // Update goals for the specific section
-          }
-          return section;
-        });
-        dailyRecords[dailyRecordIndex] = {
-          ...dailyRecord,
-          sections: updatedSections,
-        };
+
+      if (recordIndex !== -1) {
+        const sectionIndex = dailyRecords[recordIndex].sections.findIndex(
+          (section) => section.title === title
+        );
+
+        if (sectionIndex !== -1) {
+          dailyRecords[recordIndex].sections[sectionIndex] = {
+            ...dailyRecords[recordIndex].sections[sectionIndex],
+            goals: updatedGoals,
+            totalScore: calculateTotalScore(updatedGoals),
+            completedScore: calculateCompletedScore(updatedGoals),
+          };
+        } else {
+          dailyRecords[recordIndex].sections.push({
+            title,
+            color,
+            goals: updatedGoals,
+            totalScore: calculateTotalScore(updatedGoals),
+            completedScore: calculateCompletedScore(updatedGoals),
+          });
+        }
       } else {
-        // Create a new daily record if it doesn't exist
         dailyRecords.push({
           date: selectedDate,
           sections: [
             {
-              title: sectionTitle,
+              title,
+              color,
               goals: updatedGoals,
-              totalScore: calculateTotalScore(updatedGoals), // Calculate total score
-              completedScore: calculateCompletedScore(updatedGoals), // Calculate completed score
-              color: "#FFFFFF", // Set a default color or use a specific one
+              totalScore: calculateTotalScore(updatedGoals),
+              completedScore: calculateCompletedScore(updatedGoals),
             },
           ],
         });
@@ -143,6 +171,7 @@ export default function SectionScreen() {
       await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));
     } catch (error) {
       console.error("Failed to save goals:", error);
+      throw error;
     }
   };
   const calculateTotalScore = (goals: Goal[]): number => {
@@ -273,8 +302,18 @@ export default function SectionScreen() {
           { marginBottom: Platform.OS === "web" ? 0 : 95 },
         ]}
       >
-        <Header title={title} showDashboardButton={true} />
+        <Header
+          title={`${title} ${isHistoricalView ? "(Historical)" : ""}`}
+          showDashboardButton={true}
+        />
       </View>
+      {isHistoricalView && (
+        <View style={styles.historicalBanner}>
+          <Text style={styles.historicalText}>
+            Viewing goals for {selectedDate}
+          </Text>
+        </View>
+      )}
 
       <FlatList
         contentContainerStyle={styles.listContainer}
@@ -283,8 +322,12 @@ export default function SectionScreen() {
         keyExtractor={(item) => item.id}
         keyboardShouldPersistTaps="handled"
       />
-      <AddButton onPress={() => openModal("add")} />
-
+      {!isHistoricalView && (
+        <AddButton
+          onPress={() => openModal("add")}
+          tooltipText="Add a new Goal"
+        />
+      )}
       <Modal transparent={true} visible={modalVisible} animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -446,5 +489,17 @@ const styles = StyleSheet.create({
 
   dashboardButton: {
     padding: 10,
+  },
+  historicalBanner: {
+    backgroundColor: "#2c2c2c",
+    padding: 10,
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 5,
+  },
+  historicalText: {
+    color: "#fff",
+    textAlign: "center",
+    fontSize: 14,
   },
 });

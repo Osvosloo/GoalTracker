@@ -1,25 +1,32 @@
-// AddButton.tsx
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { Tooltip } from "react-native-paper";
 
 interface Props {
   onPress: () => void;
+  tooltipText: string; // Short descriptive text for the tooltip
 }
 
-const AddButton: React.FC<Props> = ({ onPress }) => {
+const AddButton: React.FC<Props> = ({ onPress, tooltipText }) => {
   return (
-    <TouchableOpacity style={styles.button} onPress={onPress}>
-      <MaterialIcons name="add" size={24} color="#000000" />
-    </TouchableOpacity>
+    <View style={styles.container}>
+      <Tooltip title={tooltipText} enterTouchDelay={200} leaveTouchDelay={200}>
+        <TouchableOpacity style={styles.button} onPress={onPress}>
+          <MaterialIcons name="add" size={24} color="#000000" />
+        </TouchableOpacity>
+      </Tooltip>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  button: {
+  container: {
     position: "absolute",
     right: 20,
     bottom: 20,
+  },
+  button: {
     backgroundColor: "#fff",
     borderRadius: 30,
     width: 60,
