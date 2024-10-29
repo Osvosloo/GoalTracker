@@ -10,5 +10,10 @@ npm-debug.*
 *.orig.*
 web-build/
 
+#Notes
+# Expo run android build:
+# eas build --platform android --profile development
+
+
 # macOS
 .DS_Store

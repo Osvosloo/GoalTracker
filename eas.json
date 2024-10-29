@@ -1,13 +1,50 @@
 {
+  "cli": {
+    "version": ">= 5.9.1"
+  },
   "build": {
-    "preview": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "ENVIRONMENT": "development"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "ENVIRONMENT": "staging"
       }
     },
     "production": {
+      "distribution": "store",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "ENVIRONMENT": "production"
+      }
+    },
+    "development-simulator": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "gradleCommand": ":app:assembleDebug"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./path-to-your-service-account.json",
+        "track": "internal",
+        "releaseStatus": "completed"
       }
     }
   }

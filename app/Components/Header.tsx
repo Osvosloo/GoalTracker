@@ -6,11 +6,10 @@ import {
   TouchableOpacity,
   StatusBar,
   SafeAreaView,
-  Platform,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Menu, Provider, Tooltip } from "react-native-paper";
+import { Provider, Tooltip } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BurgerMenu from "./BurgerMenu";
 
@@ -33,11 +32,6 @@ const Header: React.FC<HeaderProps> = ({
     router.push("/DashboardScreen");
   };
 
-  const handleMenuItemPress = (route: string) => {
-    setMenuVisible(false);
-    router.push(route);
-  };
-
   return (
     <Provider>
       <SafeAreaView style={[styles.safeArea, { paddingTop: insets.top }]}>
@@ -51,7 +45,10 @@ const Header: React.FC<HeaderProps> = ({
             <MaterialIcons name="menu" size={30} color="#fff" />
           </TouchableOpacity>
 
-          <Text style={styles.header}>{title}</Text>
+          <View style={styles.headerContainer}>
+            <Text style={styles.header}>{title}</Text>
+          </View>
+
           {showDashboardButton && (
             <Tooltip
               title="Go to Dashboard"
@@ -80,23 +77,26 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "space-between", // Space between the items
     padding: 10,
     backgroundColor: "#1e1e1e",
-    height: 70, // Adjust height if necessary
+    height: 70,
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 10,
     width: "100%",
     borderBottomWidth: 1,
     borderBottomColor: "#000",
   },
+  headerContainer: {
+    flex: 1, // Take up available space
+    flexGrow: 1,
+    alignItems: "center", // Center the header text
+    justifyContent: "center", // Center the header text vertically
+  },
   header: {
     color: "#fff",
     fontSize: 20,
-    flex: 1,
-    textAlign: "center",
-    textAlignVertical: "center",
-    marginRight: 37, // Adjust as needed
+    textAlign: "center", // Center the text within the container
   },
   burgerMenu: {
     padding: 5,

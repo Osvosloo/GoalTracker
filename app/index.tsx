@@ -43,13 +43,23 @@ export default function HomeScreen() {
       const recordsData = await AsyncStorage.getItem("dailyRecords");
       if (recordsData) {
         const dailyRecords: DailyRecord[] = JSON.parse(recordsData);
-        const dailyRecord = dailyRecords.find(
+        const todayRecord = dailyRecords.find(
           (record) => record.date === selectedDate
         );
-        if (dailyRecord) {
-          setSections(dailyRecord.sections);
+        const yesterdayDate = new Date();
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const yesterdayRecord = dailyRecords.find(
+          (record) => record.date === yesterdayDate.toISOString().split("T")[0]
+        );
+
+        if (todayRecord && todayRecord.sections.length > 0) {
+          // If today's sections are not empty, load them
+          setSections(todayRecord.sections);
+        } else if (yesterdayRecord) {
+          // If today's sections are empty, load yesterday's sections
+          setSections(yesterdayRecord.sections);
         } else {
-          setSections([]); // Clear sections if no record is found for the selected date
+          setSections([]); // Clear sections if no record is found for today or yesterday
         }
       }
     } catch (error) {
@@ -336,7 +346,6 @@ export default function HomeScreen() {
               value={sectionTitle}
               onChangeText={setSectionTitle}
             />
-            <Text style={styles.colorPickerLabel}>Choose section color:</Text>
             <ColorPicker onColorSelect={setSectionColor} />
             <View style={styles.selectedColorContainer}></View>
             <View style={styles.modalButtons}>
