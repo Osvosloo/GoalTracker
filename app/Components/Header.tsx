@@ -7,11 +7,12 @@ import {
   StatusBar,
   SafeAreaView,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Provider, Tooltip } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BurgerMenu from "./BurgerMenu";
+import FeedbackModal from "../DashboardComp/FeedbackModal";
 
 interface HeaderProps {
   title: string;
@@ -24,12 +25,21 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const router = useRouter();
   const [menuVisible, setMenuVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
   const insets = useSafeAreaInsets();
 
   const toggleMenu = () => setMenuVisible((prev) => !prev);
 
   const navigateToDashboard = () => {
     router.push("/DashboardScreen");
+  };
+
+  const getFeedback = () => {
+    setModalVisible(true); // Open the feedback modal
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false); // Close the feedback modal
   };
 
   return (
@@ -49,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({
             <Text style={styles.header}>{title}</Text>
           </View>
 
-          {showDashboardButton && (
+          {showDashboardButton ? (
             <Tooltip
               title="Go to Dashboard"
               enterTouchDelay={200}
@@ -62,9 +72,25 @@ const Header: React.FC<HeaderProps> = ({
                 <MaterialIcons name="dashboard" size={24} color="#fff" />
               </TouchableOpacity>
             </Tooltip>
+          ) : (
+            <Tooltip
+              title="Get AI Feedback"
+              enterTouchDelay={200}
+              leaveTouchDelay={200}
+            >
+              <TouchableOpacity
+                style={styles.feedbackButton}
+                onPress={getFeedback}
+              >
+                <FontAwesome name="lightbulb-o" size={24} color="#fff" />
+              </TouchableOpacity>
+            </Tooltip>
           )}
         </View>
         <BurgerMenu visible={menuVisible} onClose={toggleMenu} />
+
+        {/* Feedback Modal */}
+        <FeedbackModal visible={modalVisible} onClose={handleCloseModal} />
       </SafeAreaView>
     </Provider>
   );
@@ -77,7 +103,7 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between", // Space between the items
+    justifyContent: "space-between",
     padding: 10,
     backgroundColor: "#1e1e1e",
     height: 70,
@@ -88,15 +114,15 @@ const styles = StyleSheet.create({
     borderBottomColor: "#000",
   },
   headerContainer: {
-    flex: 1, // Take up available space
+    flex: 1,
     flexGrow: 1,
-    alignItems: "center", // Center the header text
-    justifyContent: "center", // Center the header text vertically
+    alignItems: "center",
+    justifyContent: "center",
   },
   header: {
     color: "#fff",
     fontSize: 20,
-    textAlign: "center", // Center the text within the container
+    textAlign: "center",
   },
   burgerMenu: {
     padding: 5,
@@ -104,9 +130,8 @@ const styles = StyleSheet.create({
   dashboardButton: {
     padding: 5,
   },
-  menu: {
-    zIndex: 30,
-    marginTop: 80,
+  feedbackButton: {
+    padding: 5,
   },
 });
 

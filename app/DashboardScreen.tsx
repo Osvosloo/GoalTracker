@@ -32,6 +32,7 @@ const Dashboard: React.FC = () => {
   );
   const [isHistoricalView, setIsHistoricalView] = useState(false);
   router;
+
   useEffect(() => {
     loadDashboardData();
   }, []);

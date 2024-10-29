@@ -58,12 +58,6 @@ export default function SectionScreen() {
     }
   }, [sectionTitle, selectedDate]);
 
-  // useEffect(() => {
-  //   const today = new Date().toISOString().split("T")[0];
-  //   setIsHistoricalView(selectedDate !== today);
-  //   loadGoals();
-  // }, [selectedDate, title]);
-
   const loadGoals = async () => {
     try {
       const recordsData = await AsyncStorage.getItem("dailyRecords");
