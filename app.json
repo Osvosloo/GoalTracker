@@ -33,7 +33,8 @@
     "extra": {
       "eas": {
         "projectId": "6d59f83a-1083-4653-b7a0-ed5c9e4310b1"
-      }
+      },
+      "COHERE_API_KEY": "N3qOxiw0t4leKYz6dRwWoKXSuNnfQxlHdb9cq6Ce" 
     }
   }
 }

@@ -7,9 +7,9 @@ import {
   StatusBar,
   SafeAreaView,
 } from "react-native";
-import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Provider, Tooltip } from "react-native-paper";
+import { Provider } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BurgerMenu from "./BurgerMenu";
 import FeedbackModal from "../DashboardComp/FeedbackModal";
@@ -34,10 +34,6 @@ const Header: React.FC<HeaderProps> = ({
     router.push("/DashboardScreen");
   };
 
-  const getFeedback = () => {
-    setModalVisible(true); // Open the feedback modal
-  };
-
   const handleCloseModal = () => {
     setModalVisible(false); // Close the feedback modal
   };
@@ -59,32 +55,13 @@ const Header: React.FC<HeaderProps> = ({
             <Text style={styles.header}>{title}</Text>
           </View>
 
-          {showDashboardButton ? (
-            <Tooltip
-              title="Go to Dashboard"
-              enterTouchDelay={200}
-              leaveTouchDelay={200}
+          {showDashboardButton && (
+            <TouchableOpacity
+              style={styles.dashboardButton}
+              onPress={navigateToDashboard}
             >
-              <TouchableOpacity
-                style={styles.dashboardButton}
-                onPress={navigateToDashboard}
-              >
-                <MaterialIcons name="dashboard" size={24} color="#fff" />
-              </TouchableOpacity>
-            </Tooltip>
-          ) : (
-            <Tooltip
-              title="Get AI Feedback"
-              enterTouchDelay={200}
-              leaveTouchDelay={200}
-            >
-              <TouchableOpacity
-                style={styles.feedbackButton}
-                onPress={getFeedback}
-              >
-                <FontAwesome name="lightbulb-o" size={24} color="#fff" />
-              </TouchableOpacity>
-            </Tooltip>
+              <MaterialIcons name="dashboard" size={24} color="#fff" />
+            </TouchableOpacity>
           )}
         </View>
         <BurgerMenu visible={menuVisible} onClose={toggleMenu} />
@@ -128,9 +105,6 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   dashboardButton: {
-    padding: 5,
-  },
-  feedbackButton: {
     padding: 5,
   },
 });

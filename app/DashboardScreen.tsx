@@ -18,6 +18,9 @@ import DateSelector from "./UI/DateSelector";
 import { DailyCompletion, WeeklyStats, Goal, Section } from "./types";
 import SectionList from "./UI/SectionList";
 import { router, Router } from "expo-router";
+import FeedbackModal from "./DashboardComp/FeedbackModal";
+import { MaterialIcons } from "@expo/vector-icons";
+import { Tooltip } from "react-native-paper";
 
 const Dashboard: React.FC = () => {
   const [dailyRecords, setDailyRecords] = useState<DailyRecord[]>([]);
@@ -32,6 +35,8 @@ const Dashboard: React.FC = () => {
   );
   const [isHistoricalView, setIsHistoricalView] = useState(false);
   router;
+  const [modalVisible, setModalVisible] = useState(false);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -40,6 +45,14 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     filterSectionData();
   }, [selectedSection, selectedDate, dailyRecords]);
+
+  const handleOpenModal = () => {
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+  };
 
   const filterSectionData = () => {
     const dailyRecord = dailyRecords.find(
@@ -170,6 +183,24 @@ const Dashboard: React.FC = () => {
           ))}
         </View>
       )}
+
+      <Tooltip
+        title="Give Feedback"
+        enterTouchDelay={200}
+        leaveTouchDelay={200}
+      >
+        <TouchableOpacity
+          style={styles.floatingButton}
+          onPress={handleOpenModal}
+          onPressIn={() => setTooltipVisible(true)} // Show tooltip on press
+          onPressOut={() => setTooltipVisible(false)} // Hide tooltip when not pressed
+        >
+          <MaterialIcons name="lightbulb-outline" size={30} color="#000" />
+        </TouchableOpacity>
+      </Tooltip>
+
+      {/* Feedback Modal */}
+      <FeedbackModal visible={modalVisible} onClose={handleCloseModal} />
     </View>
   );
 };
@@ -211,6 +242,22 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     marginLeft: 10,
+  },
+  floatingButton: {
+    position: "absolute",
+    bottom: 30,
+    left: 30,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#fff", // Change to your desired color
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 5, // For Android shadow
+    shadowColor: "#000", // For iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
 });
 

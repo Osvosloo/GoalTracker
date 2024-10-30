@@ -52,12 +52,21 @@ export default function HomeScreen() {
           (record) => record.date === yesterdayDate.toISOString().split("T")[0]
         );
 
-        if (todayRecord && todayRecord.sections.length > 0) {
+        if (todayRecord) {
           // If today's sections are not empty, load them
           setSections(todayRecord.sections);
         } else if (yesterdayRecord) {
-          // If today's sections are empty, load yesterday's sections
-          setSections(yesterdayRecord.sections);
+          // If today's sections are empty, copy yesterday's sections to today
+          const newTodayRecord = {
+            date: selectedDate,
+            sections: [...yesterdayRecord.sections], // Copy sections from yesterday
+          };
+          dailyRecords.push(newTodayRecord); // Add the new record for today
+          await AsyncStorage.setItem(
+            "dailyRecords",
+            JSON.stringify(dailyRecords)
+          ); // Save updated records
+          setSections(newTodayRecord.sections); // Set sections to today's sections
         } else {
           setSections([]); // Clear sections if no record is found for today or yesterday
         }
@@ -280,6 +289,9 @@ export default function HomeScreen() {
           sectionTitle,
           "on date:",
           selectedDate
+        );
+        alert(
+          `No section data found for "${sectionTitle}" on date: ${selectedDate}`
         );
       }
     } catch (error) {
