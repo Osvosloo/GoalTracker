@@ -114,6 +114,17 @@ const Dashboard: React.FC = () => {
     await loadDashboardData(); // Optionally reload data for the new date
   };
 
+  const handleSectionPress = (sectionTitle: any) => {
+    router.push({
+      pathname: "/SectionScreen",
+      params: {
+        title: sectionTitle,
+        date: selectedDate, // Pass the selected date here
+        isHistorical: isHistoricalView.toString(), // Pass historical view state
+      },
+    });
+  };
+
   const chartWidth = Dimensions.get("window").width - 32;
   const chartHeight = 100;
 
@@ -153,6 +164,7 @@ const Dashboard: React.FC = () => {
       <SectionList
         filteredData={filteredData}
         isHistorical={isHistoricalView} // Pass isHistoricalView state
+        selectedDate={selectedDate}
       />
       {weeklyStats && (
         <View style={styles.statsContainer}>

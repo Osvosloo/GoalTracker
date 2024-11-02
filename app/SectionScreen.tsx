@@ -39,7 +39,7 @@ export default function SectionScreen() {
   const [activeGoal, setActiveGoal] = useState<string | null>(null);
   const [sectionTitle, setSectionTitle] = useState<string>(""); // Changed to sectionTitle
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
+    dateParam || new Date().toISOString().split("T")[0]
   );
 
   useEffect(() => {
@@ -48,6 +48,7 @@ export default function SectionScreen() {
         ? params.title[0]
         : params.title;
       setSectionTitle(titleParam || "");
+      setSelectedDate(dateParam || new Date().toISOString().split("T")[0]);
     };
     initializeSection();
   }, [params.title]);

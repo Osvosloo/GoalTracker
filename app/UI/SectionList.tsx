@@ -11,12 +11,14 @@ import { SectionData } from "../types";
 
 interface SectionListProps {
   filteredData: SectionData[];
-  isHistorical: boolean; // Add isHistorical prop
+  isHistorical: boolean;
+  selectedDate: string;
 }
 
 const SectionList: React.FC<SectionListProps> = ({
   filteredData,
   isHistorical,
+  selectedDate,
 }) => {
   const router = useRouter();
 
@@ -26,7 +28,7 @@ const SectionList: React.FC<SectionListProps> = ({
         section.title
       )}&color=${encodeURIComponent(
         section.color
-      )}&isHistorical=${isHistorical}`
+      )}&isHistorical=${isHistorical}&date=${encodeURIComponent(selectedDate)}` // Pass the selected date
     );
   };
 
