@@ -42,16 +42,23 @@ export default function SectionScreen() {
     dateParam || new Date().toISOString().split("T")[0]
   );
 
+  // useEffect(() => {
+  //   const initializeSection = async () => {
+  //     const titleParam = Array.isArray(params.title)
+  //       ? params.title[0]
+  //       : params.title;
+  //     setSectionTitle(titleParam || "");
+  //     setSelectedDate(dateParam || new Date().toISOString().split("T")[0]);
+  //   };
+  //   initializeSection();
+  // }, [params.title]);
   useEffect(() => {
     const initializeSection = async () => {
-      const titleParam = Array.isArray(params.title)
-        ? params.title[0]
-        : params.title;
-      setSectionTitle(titleParam || "");
-      setSelectedDate(dateParam || new Date().toISOString().split("T")[0]);
+      setSectionTitle(title);
+      loadGoals();
     };
     initializeSection();
-  }, [params.title]);
+  }, [title]);
 
   useEffect(() => {
     if (sectionTitle) {
@@ -73,7 +80,6 @@ export default function SectionScreen() {
             (section) => section.title === title
           );
           if (sectionData) {
-            console.log("do it");
             console.log("Goals loaded:", sectionData.goals);
             setGoals(sectionData.goals || []);
             return;
@@ -180,6 +186,12 @@ export default function SectionScreen() {
   };
 
   const handleUpdateGoal = async () => {
+    console.log("updated");
+    if (isHistoricalView) {
+      console.log("cant update");
+      Alert.alert("Notice", "Cannot edit goals for past dates");
+      return;
+    }
     if (!goalName.trim()) {
       alert("Goal name cannot be empty!");
       return;
@@ -195,6 +207,10 @@ export default function SectionScreen() {
   };
 
   const handleDeleteGoal = async (id: string) => {
+    if (isHistoricalView) {
+      Alert.alert("Notice", "Cannot delete goals for past dates");
+      return;
+    }
     const updatedGoals = goals.filter((goal) => goal.id !== id);
     setGoals(updatedGoals);
     await saveGoals(updatedGoals);
@@ -202,6 +218,9 @@ export default function SectionScreen() {
   };
 
   const handleToggleGoal = async (id: string) => {
+    if (isHistoricalView) {
+      return;
+    }
     const updatedGoals = goals.map((goal) =>
       goal.id === id ? { ...goal, completed: !goal.completed } : goal
     );
@@ -210,6 +229,11 @@ export default function SectionScreen() {
   };
 
   const openModal = (type: "add" | "edit", id?: string) => {
+    if (isHistoricalView) {
+      console.log("is history");
+      alert("gg");
+      return;
+    }
     setModalType(type);
     if (type === "edit" && id) {
       const goal = goals.find((g) => g.id === id);
@@ -226,6 +250,7 @@ export default function SectionScreen() {
 
   const closeModal = () => {
     setModalVisible(false);
+    setModalType("add");
     setGoalName("");
     setGoalScore(1);
     setEditGoalId(null);
@@ -256,7 +281,7 @@ export default function SectionScreen() {
         </Text>
       </TouchableOpacity>
       <View style={styles.iconContainer}>
-        {activeGoal === item.id ? (
+        {!isHistoricalView && activeGoal === item.id ? (
           <>
             <TouchableOpacity
               onPress={() => openModal("edit", item.id)}
