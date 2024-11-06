@@ -77,7 +77,7 @@ export default function SectionScreen() {
 
         if (dailyRecord) {
           const sectionData = dailyRecord.sections.find(
-            (section) => section.title === title
+            (section) => section.title === sectionTitle // Use the current section title
           );
           if (sectionData) {
             console.log("Goals loaded:", sectionData.goals);
@@ -135,19 +135,23 @@ export default function SectionScreen() {
 
       if (recordIndex !== -1) {
         const sectionIndex = dailyRecords[recordIndex].sections.findIndex(
-          (section) => section.title === title
+          (section) => section.title === sectionTitle // Use the current section title
         );
 
         if (sectionIndex !== -1) {
+          // Update the existing section with the new title and color
           dailyRecords[recordIndex].sections[sectionIndex] = {
             ...dailyRecords[recordIndex].sections[sectionIndex],
+            title: sectionTitle, // Use the updated title
+            color: color, // Use the updated color
             goals: updatedGoals,
             totalScore: calculateTotalScore(updatedGoals),
             completedScore: calculateCompletedScore(updatedGoals),
           };
         } else {
+          // If the section is not found, add a new one with the new title and color
           dailyRecords[recordIndex].sections.push({
-            title,
+            title: sectionTitle,
             color,
             goals: updatedGoals,
             totalScore: calculateTotalScore(updatedGoals),
@@ -155,11 +159,12 @@ export default function SectionScreen() {
           });
         }
       } else {
+        // If the record for the selected date is not found, create a new one
         dailyRecords.push({
           date: selectedDate,
           sections: [
             {
-              title,
+              title: sectionTitle,
               color,
               goals: updatedGoals,
               totalScore: calculateTotalScore(updatedGoals),

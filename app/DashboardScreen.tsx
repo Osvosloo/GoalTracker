@@ -15,9 +15,9 @@ import Header from "./Components/Header";
 import DashboardManager from "./DashboardComp/DashboardManager";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateSelector from "./UI/DateSelector";
-import { DailyCompletion, WeeklyStats, Goal, Section } from "./types";
+import { WeeklyStats, Goal } from "./types";
 import SectionList from "./UI/SectionList";
-import { router, Router } from "expo-router";
+import { router } from "expo-router";
 import FeedbackModal from "./DashboardComp/FeedbackModal";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Tooltip } from "react-native-paper";
@@ -27,14 +27,14 @@ const Dashboard: React.FC = () => {
   const [sectionData, setSectionData] = useState<SectionData[]>([]);
   const [selectedSection, setSelectedSection] = useState<string | null>("all");
   const [filteredData, setFilteredData] = useState<SectionData[]>([]);
-  const [hasDataForSelectedDate, setHasDataForSelectedDate] =
-    useState<boolean>(true);
+  const [noSectionsMessage, setNoSectionsMessage] = useState<string | null>(
+    null
+  ); // State for no sections message
   const [weeklyStats, setWeeklyStats] = useState<WeeklyStats | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split("T")[0]
   );
   const [isHistoricalView, setIsHistoricalView] = useState(false);
-  router;
   const [modalVisible, setModalVisible] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
 
@@ -60,7 +60,6 @@ const Dashboard: React.FC = () => {
     );
 
     if (dailyRecord) {
-      // Filter section data based on the selected section
       const updatedFilteredData =
         selectedSection === "all"
           ? dailyRecord.sections
@@ -69,8 +68,14 @@ const Dashboard: React.FC = () => {
             );
 
       setFilteredData(updatedFilteredData);
+      setNoSectionsMessage(
+        updatedFilteredData.length === 0
+          ? `No sections found for ${selectedDate}`
+          : null
+      ); // Set message if no sections found
     } else {
       setFilteredData([]); // Clear the data if no record is found
+      setNoSectionsMessage(`No data for ${selectedDate}`); // Set message if no record found
     }
   };
 
@@ -128,8 +133,6 @@ const Dashboard: React.FC = () => {
   const chartWidth = Dimensions.get("window").width - 32;
   const chartHeight = 100;
 
-  // Separate sections with goals from those without goals
-  const sections = filteredData; //may neeed to add back to work   **********************************************************
   return (
     <View style={styles.container}>
       <View
@@ -160,12 +163,20 @@ const Dashboard: React.FC = () => {
           />
         )}
       </View>
-      {/* <SectionList filteredData={filteredData} /> */}
-      <SectionList
-        filteredData={filteredData}
-        isHistorical={isHistoricalView} // Pass isHistoricalView state
-        selectedDate={selectedDate}
-      />
+
+      <View style={{ flexGrow: 1 }}>
+        {noSectionsMessage ? (
+          <View style={styles.noSectionsContainer}>
+            <Text style={styles.noSectionsText}>{noSectionsMessage}</Text>
+          </View>
+        ) : (
+          <SectionList
+            filteredData={filteredData}
+            isHistorical={isHistoricalView} // Pass isHistoricalView state
+            selectedDate={selectedDate}
+          />
+        )}
+      </View>
       {weeklyStats && (
         <View style={styles.statsContainer}>
           <Text style={styles.statsHeader}>Weekly Stats</Text>
@@ -233,6 +244,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#2c2c2c",
     borderRadius: 10,
     marginHorizontal: 16,
+    // flexGrow: 1,
   },
   statsContainer: {
     padding: 10,
@@ -270,6 +282,15 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
+  },
+  noSectionsContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  noSectionsText: {
+    color: "#fff",
+    fontSize: 18,
   },
 });
 

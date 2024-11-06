@@ -9,6 +9,8 @@ npm-debug.*
 *.mobileprovision
 *.orig.*
 web-build/
+app.json
+.env
 
 #Notes
 # Expo run android build:

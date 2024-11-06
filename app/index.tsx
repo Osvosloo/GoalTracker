@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, startTransition } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  StatusBar,
   Modal,
   TextInput,
   Platform,
@@ -21,7 +20,6 @@ import AddButton from "./UI/AddButton";
 
 export default function HomeScreen() {
   const [sections, setSections] = useState<SectionData[]>([]);
-  const [goals, setGoals] = useState<Goal[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit">("add");
   const [sectionTitle, setSectionTitle] = useState("");
@@ -38,62 +36,111 @@ export default function HomeScreen() {
     checkAndResetGoals();
   }, []);
 
+  const deepCopySections = (sections: SectionData[]) => {
+    return sections.map((section) => ({
+      ...section,
+      goals: [...section.goals], // Create a copy of goals array
+    }));
+  };
+
   const loadSections = async () => {
     try {
-      const recordsData = await AsyncStorage.getItem("dailyRecords");
-      if (recordsData) {
-        const dailyRecords: DailyRecord[] = JSON.parse(recordsData);
-        const todayRecord = dailyRecords.find(
-          (record) => record.date === selectedDate
-        );
-        const yesterdayDate = new Date();
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-        const yesterdayRecord = dailyRecords.find(
-          (record) => record.date === yesterdayDate.toISOString().split("T")[0]
-        );
+      console.log("Loading sections...");
 
-        if (todayRecord) {
-          // If today's sections are not empty, load them
-          setSections(todayRecord.sections);
-        } else if (yesterdayRecord) {
-          // If today's sections are empty, copy yesterday's sections to today
-          const newTodayRecord = {
-            date: selectedDate,
-            sections: [...yesterdayRecord.sections], // Copy sections from yesterday
-          };
-          dailyRecords.push(newTodayRecord); // Add the new record for today
-          await AsyncStorage.setItem(
-            "dailyRecords",
-            JSON.stringify(dailyRecords)
-          ); // Save updated records
-          setSections(newTodayRecord.sections); // Set sections to today's sections
-        } else {
-          setSections([]); // Clear sections if no record is found for today or yesterday
+      const recordsData = await AsyncStorage.getItem("dailyRecords");
+      let dailyRecords: DailyRecord[] = recordsData
+        ? JSON.parse(recordsData)
+        : [];
+
+      console.log("Current daily records:", dailyRecords);
+
+      // Check for today's record
+      let todayRecord = dailyRecords.find(
+        (record) => record.date === selectedDate
+      );
+      console.log("Today's record:", todayRecord);
+
+      const today = new Date();
+      const lastRecordDate =
+        dailyRecords.length > 0
+          ? new Date(
+              Math.max(
+                ...dailyRecords.map((record) => new Date(record.date).getTime())
+              )
+            )
+          : new Date(today); // Use the last existing record date or today if no records exist
+
+      // Create DailyRecords for any missing past days
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - 7); // Start checking from 7 days ago
+
+      // Loop through dates from the last record date to today, but only up to 7 days back
+      for (
+        let date = lastRecordDate;
+        date >= startDate && date <= today;
+        date.setDate(date.getDate() - 1)
+      ) {
+        const formattedDate = date.toISOString().split("T")[0];
+        if (!dailyRecords.find((record) => record.date === formattedDate)) {
+          // If no record exists for this date, create one
+          console.log(`Creating record for missing date: ${formattedDate}`);
+          dailyRecords.push({
+            date: formattedDate,
+            sections: deepCopySections(sections), // Use deep copy of current sections
+          });
         }
       }
+
+      // Now check if today has a record
+      if (!todayRecord) {
+        console.log("No record found for today, creating a new one...");
+        // If no record for today, create one based on existing sections or default sections
+        todayRecord = {
+          date: selectedDate,
+          sections: deepCopySections(sections), // Use deep copy of current sections
+        };
+
+        // If sections are empty, initialize default sections
+        if (sections.length === 0) {
+          console.log("Sections are empty, initializing default sections...");
+          const defaultSections: SectionData[] = [
+            {
+              title: "Work",
+              goals: [],
+              totalScore: 0,
+              completedScore: 0,
+              color: "#FF5733",
+            },
+            {
+              title: "Personal",
+              goals: [],
+              totalScore: 0,
+              completedScore: 0,
+              color: "#33FF57",
+            },
+          ];
+          todayRecord.sections = defaultSections; // Use default sections
+          startTransition(() => setSections(defaultSections)); // Set sections to default
+        }
+
+        dailyRecords.push(todayRecord);
+        console.log("Today's record created:", todayRecord);
+      }
+
+      // Save updated records
+      await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));
+      console.log("Daily records updated and saved:", dailyRecords);
+      setSections(todayRecord.sections); // Set sections to today's sections
     } catch (error) {
       console.error("Failed to load sections:", error);
     }
   };
-
-  // const loadGoals = async () => {
-  //   try {
-  //     const storedGoals = await AsyncStorage.getItem("goals");
-  //     if (storedGoals) {
-  //       console.log(storedGoals);
-  //       setGoals(JSON.parse(storedGoals));
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to load goals:", error);
-  //   }
-  // };
 
   const handleAddSection = async () => {
     if (!sectionTitle.trim()) {
       alert("Section title cannot be empty!");
       return;
     }
-    // Check for unique title
     const existingSection = sections.find(
       (section) => section.title === sectionTitle
     );
@@ -103,18 +150,15 @@ export default function HomeScreen() {
     }
 
     try {
-      // First, get the current daily records
       const recordsData = await AsyncStorage.getItem("dailyRecords");
       let dailyRecords: DailyRecord[] = recordsData
         ? JSON.parse(recordsData)
         : [];
 
-      // Find the current day's record
       let currentDayRecord = dailyRecords.find(
         (record) => record.date === selectedDate
       );
 
-      // Initialize a new section
       const newSection: SectionData = {
         title: sectionTitle,
         goals: [],
@@ -124,10 +168,8 @@ export default function HomeScreen() {
       };
 
       if (currentDayRecord) {
-        // If we have a record for today, add the new section while preserving existing sections
         currentDayRecord.sections = [...currentDayRecord.sections, newSection];
       } else {
-        // If no record exists for today, create a new one
         currentDayRecord = {
           date: selectedDate,
           sections: [newSection],
@@ -135,10 +177,8 @@ export default function HomeScreen() {
         dailyRecords.push(currentDayRecord);
       }
 
-      // Save the updated records
       await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));
 
-      // Update local state
       setSections(currentDayRecord.sections);
       closeModal();
     } catch (error) {
@@ -148,6 +188,7 @@ export default function HomeScreen() {
   };
 
   const handleUpdateSection = async () => {
+    console.log("Before Update:", sections);
     if (!sectionTitle.trim()) {
       alert("Section title cannot be empty!");
       return;
@@ -162,11 +203,18 @@ export default function HomeScreen() {
       return;
     }
 
-    const updatedSections = sections.map((section) =>
-      section.title === activeSectionTitle
-        ? { ...section, title: sectionTitle, color: sectionColor }
-        : section
-    );
+    const updatedSections = sections.map((section) => {
+      if (section.title === activeSectionTitle) {
+        return {
+          ...section,
+          title: sectionTitle,
+          color: sectionColor,
+          goals: section.goals, // Ensure goals are preserved
+        };
+      }
+      return section;
+    });
+    console.log("Updated Sections:", updatedSections);
     await saveSections(updatedSections);
     setSections(updatedSections);
     closeModal();
@@ -176,14 +224,9 @@ export default function HomeScreen() {
     const updatedSections = sections.filter(
       (section) => section.title !== title
     );
-    const updatedGoals = goals.filter((goal) => goal.sectionTitle !== title);
     await saveSections(updatedSections);
     setSections(updatedSections);
-    // setGoals(updatedGoals);
-
-    // await saveGoals(updatedGoals);
   };
-
   const saveSections = async (updatedSections: SectionData[]) => {
     try {
       const recordsData = await AsyncStorage.getItem("dailyRecords");
@@ -196,26 +239,12 @@ export default function HomeScreen() {
       );
 
       if (dailyRecordIndex !== -1) {
-        // Preserve the goals of sections that weren't modified
-        const updatedSectionsWithPreservedGoals = updatedSections.map(
-          (updatedSection) => {
-            const existingSection = dailyRecords[
-              dailyRecordIndex
-            ].sections.find(
-              (section) => section.title === updatedSection.title
-            );
-            return existingSection
-              ? { ...updatedSection, goals: existingSection.goals }
-              : updatedSection;
-          }
-        );
-
         dailyRecords[dailyRecordIndex].sections =
-          updatedSectionsWithPreservedGoals;
+          deepCopySections(updatedSections);
       } else {
         dailyRecords.push({
           date: selectedDate,
-          sections: updatedSections,
+          sections: deepCopySections(updatedSections),
         });
       }
 
@@ -224,15 +253,6 @@ export default function HomeScreen() {
       console.error("Failed to save sections:", error);
     }
   };
-
-  // const saveGoals = async (updatedGoals: Goal[]) => {
-  //   try {
-  //     await AsyncStorage.setItem("goals", JSON.stringify(updatedGoals));
-  //   } catch (error) {
-  //     console.error("Failed to save goals:", error);
-  //   }
-  // };
-
   const checkAndResetGoals = async () => {
     const lastResetDate = await AsyncStorage.getItem("lastResetDate");
     const today = new Date().toISOString().split("T")[0];
@@ -243,28 +263,30 @@ export default function HomeScreen() {
       await AsyncStorage.setItem("lastResetDate", today);
     }
   };
+
   const openModal = (type: "add" | "edit", title?: string) => {
     setModalType(type);
     if (type === "edit" && title) {
       const section = sections.find((s) => s.title === title);
-      setActiveSectionTitle(section?.title || "");
-      setSectionTitle(section?.title || "");
-      setSectionColor(section?.color || "#000000");
+      startTransition(() => setActiveSectionTitle(section?.title || ""));
+      startTransition(() => setSectionTitle(section?.title || ""));
+      startTransition(() => setSectionColor(section?.color || "#000000"));
     } else {
-      setActiveSectionTitle("");
-      setSectionTitle("");
-      setSectionColor("#000000");
+      startTransition(() => setActiveSectionTitle(""));
+      startTransition(() => setSectionTitle(""));
+      startTransition(() => setSectionColor("#000000"));
     }
-    setModalVisible(true);
+    startTransition(() => setModalVisible(true));
+
     setTimeout(() => {
       sectionTitleInputRef.current?.focus();
     }, 100);
   };
 
   const closeModal = () => {
-    setModalVisible(false);
-    setSectionTitle("");
-    setSectionColor("#000000");
+    startTransition(() => setModalVisible(false));
+    startTransition(() => setSectionTitle(""));
+    startTransition(() => setSectionColor("#000000"));
   };
 
   const handleSectionPress = async (sectionTitle: string, color: string) => {
@@ -380,6 +402,7 @@ export default function HomeScreen() {
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
