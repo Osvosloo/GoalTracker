@@ -1,4 +1,4 @@
-Note-Updates will roll out through the course of December. 
+Note-Key updates will roll out through the course of December. 
 
 Hey there! 👋
 
