@@ -1,4 +1,5 @@
 Hey there! 👋
+
 Welcome to my Goal Tracking App—designed to boost productivity by helping you track and analyze your goals with personalized insights from AI.
 
 Get Started
