@@ -42,16 +42,6 @@ export default function SectionScreen() {
     dateParam || new Date().toISOString().split("T")[0]
   );
 
-  // useEffect(() => {
-  //   const initializeSection = async () => {
-  //     const titleParam = Array.isArray(params.title)
-  //       ? params.title[0]
-  //       : params.title;
-  //     setSectionTitle(titleParam || "");
-  //     setSelectedDate(dateParam || new Date().toISOString().split("T")[0]);
-  //   };
-  //   initializeSection();
-  // }, [params.title]);
   useEffect(() => {
     const initializeSection = async () => {
       setSectionTitle(title);
@@ -77,7 +67,7 @@ export default function SectionScreen() {
 
         if (dailyRecord) {
           const sectionData = dailyRecord.sections.find(
-            (section) => section.title === sectionTitle // Use the current section title
+            (section) => section.title === sectionTitle
           );
           if (sectionData) {
             console.log("Goals loaded:", sectionData.goals);

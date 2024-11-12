@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 import { Provider } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BurgerMenu from "./BurgerMenu";
-import FeedbackModal from "../DashboardComp/FeedbackModal";
+import FeedbackModal from "../FeebackScreen/FeedbackModal";
 
 interface HeaderProps {
   title: string;

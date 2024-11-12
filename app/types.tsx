@@ -33,3 +33,7 @@ export interface Goal {
   sectionTitle: string;
   creationDate: Date;
 }
+export interface ExistingData {
+  date: string;
+  sections: SectionData[];
+}

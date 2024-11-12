@@ -8,6 +8,7 @@ import {
   Modal,
   TextInput,
   Platform,
+  AppState,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -17,6 +18,13 @@ import Header from "./Components/Header";
 import DashboardManager from "./DashboardComp/DashboardManager";
 import ColorPicker from "./HomeComp/ColorPicker";
 import AddButton from "./UI/AddButton";
+import { getAllSections, getDailyRecords } from "@/scripts/getFromStorage";
+import {
+  populateMissingDailyRecords,
+  saveDailyCompletion,
+  deepCopySections,
+  STORAGE_KEYS,
+} from "@/scripts/dataStructureManager";
 
 export default function HomeScreen() {
   const [sections, setSections] = useState<SectionData[]>([]);
@@ -34,93 +42,60 @@ export default function HomeScreen() {
   useEffect(() => {
     loadSections();
     checkAndResetGoals();
+    const subscription = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
-  const deepCopySections = (sections: SectionData[]) => {
-    return sections.map((section) => ({
-      ...section,
-      goals: [...section.goals], // Create a copy of goals array
-    }));
+  const handleAppStateChange = (nextAppState: string) => {
+    if (nextAppState === "background" || nextAppState === "inactive") {
+      // Call the function to save daily completion
+      saveDailyCompletion(sections);
+    }
   };
 
   const loadSections = async () => {
     try {
       console.log("Loading sections...");
 
-      const recordsData = await AsyncStorage.getItem("dailyRecords");
-      let dailyRecords: DailyRecord[] = recordsData
-        ? JSON.parse(recordsData)
-        : [];
-
+      // Load daily records
+      const dailyRecords = await getDailyRecords();
       console.log("Current daily records:", dailyRecords);
 
-      // Check for today's record
+      const today = new Date();
+      const formattedToday = today.toISOString().split("T")[0]; // Format today's date as YYYY-MM-DD
+
+      // Check if there's a record for today
       let todayRecord = dailyRecords.find(
-        (record) => record.date === selectedDate
+        (record) => record.date === formattedToday
       );
       console.log("Today's record:", todayRecord);
 
-      const today = new Date();
-      const lastRecordDate =
-        dailyRecords.length > 0
-          ? new Date(
-              Math.max(
-                ...dailyRecords.map((record) => new Date(record.date).getTime())
-              )
-            )
-          : new Date(today); // Use the last existing record date or today if no records exist
+      // Populate missing daily records
+      await populateMissingDailyRecords();
 
-      // Create DailyRecords for any missing past days
-      const startDate = new Date(today);
-      startDate.setDate(today.getDate() - 7); // Start checking from 7 days ago
-
-      // Loop through dates from the last record date to today, but only up to 7 days back
-      for (
-        let date = lastRecordDate;
-        date >= startDate && date <= today;
-        date.setDate(date.getDate() - 1)
-      ) {
-        const formattedDate = date.toISOString().split("T")[0];
-        if (!dailyRecords.find((record) => record.date === formattedDate)) {
-          // If no record exists for this date, create one
-          console.log(`Creating record for missing date: ${formattedDate}`);
-          dailyRecords.push({
-            date: formattedDate,
-            sections: deepCopySections(sections), // Use deep copy of current sections
-          });
-        }
-      }
-
-      // Now check if today has a record
+      // If no record for today, create one based on existing sections
       if (!todayRecord) {
         console.log("No record found for today, creating a new one...");
-        // If no record for today, create one based on existing sections or default sections
+
         todayRecord = {
-          date: selectedDate,
+          date: formattedToday,
           sections: deepCopySections(sections), // Use deep copy of current sections
         };
 
-        // If sections are empty, initialize default sections
-        if (sections.length === 0) {
-          console.log("Sections are empty, initializing default sections...");
-          const defaultSections: SectionData[] = [
-            {
-              title: "Work",
-              goals: [],
-              totalScore: 0,
-              completedScore: 0,
-              color: "#FF5733",
-            },
-            {
-              title: "Personal",
-              goals: [],
-              totalScore: 0,
-              completedScore: 0,
-              color: "#33FF57",
-            },
-          ];
-          todayRecord.sections = defaultSections; // Use default sections
-          startTransition(() => setSections(defaultSections)); // Set sections to default
+        // If sections are empty, handle the case appropriately
+        if (todayRecord.sections.length === 0) {
+          console.log(
+            "Sections are empty. You may want to define how to handle this case."
+          );
+          // Here you can either set sections to an empty array or provide a default structure as needed.
+          todayRecord.sections = []; // Set to empty or define a default structure
+          setSections(todayRecord.sections); // Update state if needed
         }
 
         dailyRecords.push(todayRecord);
@@ -128,9 +103,14 @@ export default function HomeScreen() {
       }
 
       // Save updated records
-      await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.DAILY_RECORDS, // Use the STORAGE_KEYS constant
+        JSON.stringify(dailyRecords)
+      );
       console.log("Daily records updated and saved:", dailyRecords);
-      setSections(todayRecord.sections); // Set sections to today's sections
+
+      // Update the sections state
+      setSections(todayRecord.sections);
     } catch (error) {
       console.error("Failed to load sections:", error);
     }
@@ -209,7 +189,7 @@ export default function HomeScreen() {
           ...section,
           title: sectionTitle,
           color: sectionColor,
-          goals: section.goals, // Ensure goals are preserved
+          goals: section.goals,
         };
       }
       return section;
