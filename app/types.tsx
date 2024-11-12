@@ -27,7 +27,7 @@ export interface SectionData extends Section {
 
 export interface Goal {
   id: string;
-  name: string;
+  title: string;
   score: number;
   completed: boolean;
   sectionTitle: string;

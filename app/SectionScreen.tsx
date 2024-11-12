@@ -33,7 +33,7 @@ export default function SectionScreen() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState<"add" | "edit">("add");
-  const [goalName, setGoalName] = useState("");
+  const [goalTitle, setGoalTitle] = useState("");
   const [goalScore, setGoalScore] = useState(1);
   const [editGoalId, setEditGoalId] = useState<string | null>(null);
   const [activeGoal, setActiveGoal] = useState<string | null>(null);
@@ -89,13 +89,13 @@ export default function SectionScreen() {
       Alert.alert("Notice", "Cannot add goals to past dates");
       return;
     }
-    if (!goalName.trim()) {
+    if (!goalTitle.trim()) {
       alert("Goal name cannot be empty!");
       return;
     }
     const newGoal: Goal = {
       id: Date.now().toString(),
-      name: goalName.trim(),
+      title: goalTitle.trim(),
       score: goalScore,
       completed: false,
       sectionTitle: sectionTitle,
@@ -187,13 +187,13 @@ export default function SectionScreen() {
       Alert.alert("Notice", "Cannot edit goals for past dates");
       return;
     }
-    if (!goalName.trim()) {
+    if (!goalTitle.trim()) {
       alert("Goal name cannot be empty!");
       return;
     }
     const updatedGoals = goals.map((goal) =>
       goal.id === editGoalId
-        ? { ...goal, name: goalName, score: goalScore }
+        ? { ...goal, title: goalTitle, score: goalScore }
         : goal
     );
     setGoals(updatedGoals);
@@ -232,11 +232,12 @@ export default function SectionScreen() {
     setModalType(type);
     if (type === "edit" && id) {
       const goal = goals.find((g) => g.id === id);
-      setGoalName(goal?.name || "");
+      setGoalTitle(goal?.title || "");
+      console.log(`logging title as edited: ${goal?.title}`);
       setGoalScore(goal?.score || 1);
       setEditGoalId(id);
     } else {
-      setGoalName("");
+      setGoalTitle("");
       setGoalScore(1);
       setEditGoalId(null);
     }
@@ -246,7 +247,7 @@ export default function SectionScreen() {
   const closeModal = () => {
     setModalVisible(false);
     setModalType("add");
-    setGoalName("");
+    setGoalTitle("");
     setGoalScore(1);
     setEditGoalId(null);
     setActiveGoal(null);
@@ -271,8 +272,10 @@ export default function SectionScreen() {
         >
           <Text style={styles.scoreText}>{item.score}</Text>
         </View>
-        <Text style={[styles.goalName, item.completed && styles.completedGoal]}>
-          {item.name}
+        <Text
+          style={[styles.goalTitle, item.completed && styles.completedGoal]}
+        >
+          {item.title}
         </Text>
       </TouchableOpacity>
       <View style={styles.iconContainer}>
@@ -351,10 +354,10 @@ export default function SectionScreen() {
             </Text>
             <TextInput
               style={styles.textInput}
-              placeholder="Enter goal name"
+              placeholder="Enter goal title"
               placeholderTextColor="#aaa"
-              value={goalName}
-              onChangeText={setGoalName}
+              value={goalTitle}
+              onChangeText={setGoalTitle}
             />
             <Text style={styles.pickerLabel}>Goal Necessity Score:</Text>
             <Picker
@@ -419,7 +422,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  goalName: {
+  goalTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#fff",

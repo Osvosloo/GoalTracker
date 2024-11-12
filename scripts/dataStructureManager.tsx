@@ -138,7 +138,7 @@ export const saveDailyCompletion = async (sections: SectionData[]) => {
         title: section.title,
         goals: section.goals.map((goal) => ({
           id: goal.id,
-          name: goal.name,
+          title: goal.title,
           score: goal.score,
           completed: goal.completed,
           sectionTitle: section.title,

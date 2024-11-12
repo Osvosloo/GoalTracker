@@ -5,7 +5,7 @@ import { Tooltip } from "react-native-paper";
 
 interface Props {
   onPress: () => void;
-  tooltipText: string; // Short descriptive text for the tooltip
+  tooltipText: string;
 }
 
 const AddButton: React.FC<Props> = ({ onPress, tooltipText }) => {

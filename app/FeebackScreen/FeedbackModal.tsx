@@ -16,6 +16,9 @@ import {
   getDailyRecords,
 } from "@/scripts/getFromStorage"; // Adjust import path
 import { cleanupOldRecords } from "@/scripts/dataStructureManager"; // Adjust import path
+import SummaryComponent from "./ReportComponents/Summary";
+import SectionFeedbackComponent from "./ReportComponents/SectionFeedback";
+import TipsComponent from "./ReportComponents/Tips";
 
 interface FeedbackModalProps {
   visible: boolean;
@@ -30,7 +33,7 @@ interface SectionFeedback {
 interface FeedbackResponse {
   summary: string;
   sectionFeedback: SectionFeedback[];
-  tips: string;
+  tips: string[];
 }
 
 const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
@@ -53,6 +56,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
 
   const handleSubmitFeedback = async () => {
     try {
+      console.log("Loading response");
+
       const formattedData = weeklyData.map((record) => ({
         date: record.date,
         sections: record.sections.map((section) => ({
@@ -61,20 +66,30 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
           completedScore: section.completedScore,
           goalsCompleted: section.goals.filter((goal) => goal.completed).length,
           totalGoals: section.goals.length,
-          necessityScore:
-            section.totalScore > 0
-              ? (section.completedScore / section.totalScore) * 100
-              : 0,
+          goals: section.goals.map((goal) => ({
+            title: goal.title,
+            completed: goal.completed,
+            score: goal.score,
+          })),
         })),
       }));
+      const fdata = JSON.stringify(formattedData);
+      console.log(`new data  \n ${fdata}`);
 
       const prompt = `
-      Analyze the following goal completion data for a user and give critical and supportive feedback to improve the user's completion rates. Provide concise and personal feedback, including:
-
-      1. A summary at the top.
-      2. Detailed insights for each section, including completion rates and tips.
-      3. General tips for improvement (3 to 5).
-
+      Analyze the following goal completion data for a user and provide structured feedback in JSON format to improve the user's completion rates. Your response should include the following fields:
+      
+      1. **summary**: A brief overview of the user's performance, highlighting key metrics and overall trends.
+      
+      2. **sectionFeedback**: An array of objects, each containing:
+         - **title**: The title of the section (as given in the data).
+         - **feedback**: A brief analysis of the completion rate, including specific metrics (e.g., "You completed X out of Y goals") and constructive feedback on how to improve in that section.
+      
+      3. **generalTips**: An array of actionable tips for improvement, formatted as a list.
+      
+      **Important**: Ensure that the JSON is properly formatted and does not include any unnecessary titles or labels. The output should be valid JSON.
+      Note also that this is for a goal tracking app, and thus you should use the section and goal titles to give relevant feedback. 
+      
       Data:
       ${JSON.stringify(formattedData)}
       `;
@@ -105,15 +120,13 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
   };
 
   const parseFeedback = (feedbackText: string): FeedbackResponse => {
-    const sections = feedbackText.split("\n\n"); // Split by double newlines
-    const summary = sections[0]; // First section is the summary
-    const sectionFeedback: SectionFeedback[] = sections
-      .slice(1, -1)
-      .map((section, index) => ({
-        title: `Section ${index + 1}`,
-        feedback: section,
-      }));
-    const tips = sections[sections.length - 1]; // Last section is general tips
+    // Parse the JSON response
+    const feedbackData = JSON.parse(feedbackText);
+
+    // Extract the relevant fields
+    const summary = feedbackData.summary;
+    const sectionFeedback: SectionFeedback[] = feedbackData.sectionFeedback;
+    const tips: string[] = feedbackData.generalTips;
 
     return {
       summary,
@@ -137,14 +150,15 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
 
     return (
       <View>
-        <Text style={styles.summaryText}>{feedbackSections.summary}</Text>
+        <SummaryComponent summary={feedbackSections.summary} />
         {feedbackSections.sectionFeedback.map((section, index) => (
-          <View key={index} style={styles.sectionContainer}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <Text style={styles.sectionText}>{section.feedback}</Text>
-          </View>
+          <SectionFeedbackComponent
+            key={index}
+            title={section.title}
+            feedback={section.feedback}
+          />
         ))}
-        <Text style={styles.tipsText}>{feedbackSections.tips}</Text>
+        <TipsComponent tips={feedbackSections.tips} />
       </View>
     );
   };
@@ -152,22 +166,15 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
   return (
     <Modal visible={visible} animationType="slide">
       <View style={styles.container}>
-        <Text style={styles.title}>Feedback</Text>
         <ScrollView style={styles.scrollView}>{renderFeedback()}</ScrollView>
         <TouchableOpacity
           style={styles.submitButton}
           onPress={handleSubmitFeedback}
         >
-          <Text style={styles.submitButtonText}>Submit Feedback</Text>
+          <Text style={styles.submitButtonText}>Get Feedback</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Text style={styles.closeButtonText}>Close</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.logButton} onPress={logAllSections}>
-          <Text style={styles.logButtonText}>Log All Sections</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.logButton} onPress={logDailyRecords}>
-          <Text style={styles.logButtonText}>Log Daily Records</Text>
         </TouchableOpacity>
       </View>
     </Modal>
@@ -177,68 +184,32 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
+
     alignItems: "center",
     padding: 20,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  summaryText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  sectionContainer: {
-    marginBottom: 15,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  sectionText: {
-    fontSize: 16,
-  },
-  tipsText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginTop: 20,
-  },
   scrollView: {
-    maxHeight: 200, // Adjust the maximum height as needed
+    maxHeight: 600,
   },
   submitButton: {
-    backgroundColor: "#4CAF50",
+    marginTop: 15,
+    backgroundColor: "#7E57C2",
     padding: 10,
     borderRadius: 5,
   },
   submitButtonText: {
     fontSize: 16,
-    color: "#FFFFFF",
+    color: "#fff",
   },
   closeButton: {
-    backgroundColor: "#FF5733",
+    backgroundColor: "#121212",
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
+    borderColor: "#121212",
+    borderWidth: 1,
   },
   closeButtonText: {
-    fontSize: 16,
-    color: "#FFFFFF",
-  },
-  logButton: {
-    backgroundColor: "#2196F3",
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
-  },
-  logButtonText: {
     fontSize: 16,
     color: "#FFFFFF",
   },
