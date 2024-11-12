@@ -1,12 +1,15 @@
-# Hi... 👋
+Note-Key updates will roll out through the course of December. 
 
-This is an app I created to improve my productivity by having
+Hey there! 👋
 
-## Get started
+Welcome to my Goal Tracking App—designed to boost productivity by helping you track and analyze your goals with personalized insights from AI.
 
-Open the app, and create a section, e.g Work, School, Exercise etc...
+Get Started
 
-Create Goals for each section.
+Open the app and create sections like Work, School, Exercise, etc.
 
-See the dashboard to keep track of your stats with detailed graphs giving a visual representation of you productivity based on your goals.
-Get AI analysis based on your goals to get custom advice on how to increase the amount of goals you complete, and advice specific to your needs
+Add specific goals for each section.
+
+Head to your dashboard to view your progress with detailed, visual stats.
+
+Plus, get tailored advice from AI on how to complete more goals and optimize your productivity based on your unique patterns.
