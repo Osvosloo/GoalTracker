@@ -86,18 +86,18 @@ const BurgerMenu: React.FC<BurgerMenuProps> = ({ visible, onClose }) => {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)", // Semi-transparent background
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   menuContainer: {
-    width: "80%", // Adjust as needed
+    width: "80%",
     height: "100%",
     backgroundColor: "#1E1E1E",
-    // borderColor: "#0C1218" /* get better color pallette */,
+    // backgroundColor: "#0C1218",
     padding: 20,
-    position: "absolute", // Make it absolute to control position
-    left: 0, // Align to the left
+    position: "absolute",
+    left: 0,
     right: 0,
-    top: 0, // Align to the top
+    top: 0,
     borderTopRightRadius: 20,
     borderBottomRightRadius: 20,
   },
@@ -106,13 +106,13 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   menuItem: {
-    paddingVertical: 15, // Increased padding for better touch area
-    borderBottomWidth: 1, // Add border separating items
-    borderBottomColor: "#fff", // Color of the border
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#fff",
   },
   menuText: {
     color: "#fff",
-    fontSize: 24, // Increased font size
+    fontSize: 24,
   },
 });
 

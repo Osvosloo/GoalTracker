@@ -11,6 +11,8 @@ npm-debug.*
 web-build/
 app.json
 .env
+Note-to-self.txt
+Datastructure.json
 
 #Notes
 # Expo run android build:
