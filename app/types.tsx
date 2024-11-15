@@ -34,6 +34,5 @@ export interface Goal {
   creationDate: Date;
 }
 export interface ExistingData {
-  date: string;
   sections: SectionData[];
 }

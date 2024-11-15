@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DailyRecord, SectionData, ExistingData } from "../app/types";
+import { getDailyRecordByDate } from "./getFromStorage";
 
 let existingData: ExistingData | null = null;
 
@@ -8,16 +9,33 @@ export const STORAGE_KEYS = {
   DAILY_COMPLETION: "dailyCompletion",
 };
 
-// Load existing data from AsyncStorage
-const loadExistingData = async () => {
+export const loadExistingData = async () => {
   try {
     const data = await AsyncStorage.getItem("existingData");
     if (data) {
       existingData = JSON.parse(data);
+      console.log(`loading existing data: ${existingData}`);
     }
   } catch (error) {
     console.error("Failed to load existing data:", error);
   }
+};
+
+export const updateExistingData = async () => {
+  const today = new Date().toISOString().split("T")[0];
+  const dailyRecord = await getDailyRecordByDate(today);
+  if (dailyRecord) {
+    existingData = {
+      sections: dailyRecord.sections.map((section) => ({
+        ...section,
+        goals: section.goals.map((goal) => ({
+          ...goal,
+          completed: goal.completed, // Keep the completion status
+        })),
+      })),
+    };
+  }
+  saveExistingData();
 };
 
 // Save existing data to AsyncStorage
@@ -158,28 +176,9 @@ export const saveDailyCompletion = async (sections: SectionData[]) => {
   }
 };
 
-// Deep copy sections
 export const deepCopySections = (sections: SectionData[]): SectionData[] => {
   return sections.map((section) => ({
     ...section,
     goals: [...section.goals],
   }));
 };
-
-// Update existing data
-const updateExistingData = (dailyRecord: DailyRecord) => {
-  existingData = {
-    date: dailyRecord.date,
-    sections: dailyRecord.sections.map((section) => ({
-      ...section,
-      goals: section.goals.map((goal) => ({
-        ...goal,
-        completed: goal.completed, // Keep the completion status
-      })),
-    })),
-  };
-  saveExistingData(); // Save updated existingData to AsyncStorage
-};
-
-// Load existing data when the app starts
-loadExistingData();

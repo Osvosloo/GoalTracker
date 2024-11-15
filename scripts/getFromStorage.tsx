@@ -6,6 +6,18 @@ const STORAGE_KEYS = {
   LAST_RESET_DATE: "lastResetDate",
 };
 
+export const getExistingData = async () => {
+  try {
+    const data = await AsyncStorage.getItem("existingData");
+    if (data) {
+      let existingData = JSON.parse(data);
+      console.log(existingData);
+    }
+  } catch (error) {
+    console.error("Failed to load existing data:", error);
+  }
+};
+
 export const getDailyRecords = async (): Promise<DailyRecord[]> => {
   try {
     const recordsData = await AsyncStorage.getItem(STORAGE_KEYS.DAILY_RECORDS);

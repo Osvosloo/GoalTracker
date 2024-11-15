@@ -19,6 +19,7 @@ import { cleanupOldRecords } from "@/scripts/dataStructureManager"; // Adjust im
 import SummaryComponent from "./ReportComponents/Summary";
 import SectionFeedbackComponent from "./ReportComponents/SectionFeedback";
 import TipsComponent from "./ReportComponents/Tips";
+import { getExistingData } from "@/scripts/getFromStorage";
 
 interface FeedbackModalProps {
   visible: boolean;
@@ -134,6 +135,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
       tips,
     };
   };
+
   const logAllSections = async () => {
     const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
     const sections = await getAllSections(today); // Pass the date to the function
@@ -175,6 +177,15 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Text style={styles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.closeButton} onPress={logAllSections}>
+          <Text style={styles.closeButtonText}>log All Sections</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.closeButton} onPress={logDailyRecords}>
+          <Text style={styles.closeButtonText}>log daily records</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.closeButton} onPress={getExistingData}>
+          <Text style={styles.closeButtonText}>get existing data</Text>
         </TouchableOpacity>
       </View>
     </Modal>

@@ -18,9 +18,15 @@ import Header from "./Components/Header";
 import DashboardManager from "./DashboardComp/DashboardManager";
 import ColorPicker from "./HomeComp/ColorPicker";
 import AddButton from "./UI/AddButton";
-import { getAllSections, getDailyRecords } from "@/scripts/getFromStorage";
+import {
+  getAllSections,
+  getDailyRecordByDate,
+  getDailyRecords,
+} from "@/scripts/getFromStorage";
 import {
   populateMissingDailyRecords,
+  loadExistingData,
+  updateExistingData,
   saveDailyCompletion,
   deepCopySections,
   STORAGE_KEYS,
@@ -40,6 +46,8 @@ export default function HomeScreen() {
   );
 
   useEffect(() => {
+    populateMissingDailyRecords();
+    loadExistingData();
     loadSections();
     checkAndResetGoals();
     const subscription = AppState.addEventListener(
@@ -54,8 +62,8 @@ export default function HomeScreen() {
 
   const handleAppStateChange = (nextAppState: string) => {
     if (nextAppState === "background" || nextAppState === "inactive") {
-      // Call the function to save daily completion
       saveDailyCompletion(sections);
+      updateExistingData();
     }
   };
 
@@ -63,7 +71,6 @@ export default function HomeScreen() {
     try {
       console.log("Loading sections...");
 
-      // Load daily records
       const dailyRecords = await getDailyRecords();
       console.log("Current daily records:", dailyRecords);
 
@@ -76,7 +83,6 @@ export default function HomeScreen() {
       );
       console.log("Today's record:", todayRecord);
 
-      // Populate missing daily records
       await populateMissingDailyRecords();
 
       // If no record for today, create one based on existing sections
@@ -85,7 +91,7 @@ export default function HomeScreen() {
 
         todayRecord = {
           date: formattedToday,
-          sections: deepCopySections(sections), // Use deep copy of current sections
+          sections: deepCopySections(sections),
         };
 
         // If sections are empty, handle the case appropriately
@@ -93,9 +99,8 @@ export default function HomeScreen() {
           console.log(
             "Sections are empty. You may want to define how to handle this case."
           );
-          // Here you can either set sections to an empty array or provide a default structure as needed.
-          todayRecord.sections = []; // Set to empty or define a default structure
-          setSections(todayRecord.sections); // Update state if needed
+          todayRecord.sections = [];
+          setSections(todayRecord.sections);
         }
 
         dailyRecords.push(todayRecord);
