@@ -17,10 +17,9 @@ import {
   getDailyRecords,
 } from "@/scripts/getFromStorage"; // Adjust import path
 import { cleanupOldRecords } from "@/scripts/dataStructureManager"; // Adjust import path
-import SummaryComponent from "./ReportComponents/Summary";
+import SummaryComponent, { Score } from "./ReportComponents/Summary";
 import SectionFeedbackComponent from "./ReportComponents/SectionFeedback";
 import TipsComponent from "./ReportComponents/Tips";
-import { getExistingData } from "@/scripts/getFromStorage";
 
 interface FeedbackModalProps {
   visible: boolean;
@@ -35,7 +34,7 @@ interface SectionFeedback {
 
 interface FeedbackResponse {
   summary: string;
-  score: string;
+  score: Score;
   sectionFeedback: SectionFeedback[];
   tips: string[];
 }
@@ -84,18 +83,18 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
       console.log(`new data  \n ${fdata}`);
 
       const prompt = `
-      Analyze the following goal completion data for a user and provide structured feedback in JSON format to improve the user's completion rates. Your response should include the following fields:
+      Analyze the following goal completion data for me and provide structured feedback in JSON format to improve my completion rates. Your response should include the following fields:
       
-      1. **summary**: A brief overview of the user's performance, highlighting key metrics and overall trends.
+      1. **summary**: A brief overview of the my performance, highlighting key metrics and overall trends.
       
-      2. **score**: A performance score indicating the user's completion rate (options: bad, moderate, good, great, amazing).
+      2. **score**: A performance score indicating my completion rate (options: aweful, bad, moderate, great, amazing).
       
       3. **sectionFeedback**: An array of objects, each containing:
          - **title**: The title of the section (as given in the data).
          - **feedback**: A brief analysis of the completion rate, including specific metrics (e.g., "You completed X out of Y goals") and constructive feedback on how to improve in that section.
          - **color**: The color code (e.g., "#FF5733") representing the sections' color.
       
-      4. **generalTips**: An array of actionable tips for improvement, formatted as a list.
+      4. **generalTips**: An array of actionable tips for improvement, formatted as a list and tailored to my specific needs.
       
       **Important**: Ensure that the JSON is properly formatted and does not include any unnecessary titles or labels. The output should be valid JSON.
       Note also that this is for a goal tracking app, and thus you should use the section and goal titles to give relevant feedback.
@@ -135,7 +134,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
     const feedbackData = JSON.parse(feedbackText);
 
     const summary = feedbackData.summary;
-    const score = feedbackData.score;
+    const score: Score = feedbackData.score;
     const sectionFeedback: SectionFeedback[] = feedbackData.sectionFeedback.map(
       (section: any) => ({
         title: section.title,
@@ -266,6 +265,9 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 16,
     color: "#FFFFFF",
+  },
+  gradient: {
+    flex: 1,
   },
 });
 

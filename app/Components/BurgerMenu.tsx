@@ -8,6 +8,7 @@ import {
   Animated,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 interface BurgerMenuProps {
   visible: boolean;
@@ -16,6 +17,7 @@ interface BurgerMenuProps {
 
 const BurgerMenu: React.FC<BurgerMenuProps> = ({ visible, onClose }) => {
   const translateX = useRef(new Animated.Value(-300)).current; // Start off-screen to the left
+  const router = useRouter();
 
   useEffect(() => {
     if (visible) {
@@ -51,8 +53,23 @@ const BurgerMenu: React.FC<BurgerMenuProps> = ({ visible, onClose }) => {
           </TouchableOpacity>
 
           {/* Menu options start from the top */}
-          <TouchableOpacity style={styles.menuItem} onPress={onClose}>
-            <Text style={styles.menuText}>Profile</Text>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+              onClose();
+              router.push("/");
+            }}
+          >
+            <Text style={styles.menuText}>Home</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+              onClose();
+              router.push("/DashboardScreen");
+            }}
+          >
+            <Text style={styles.menuText}>Dashboard</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={onClose}>
             <Text style={styles.menuText}>Settings</Text>

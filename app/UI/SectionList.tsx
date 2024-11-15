@@ -65,6 +65,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     margin: 5,
     marginHorizontal: 20,
+    paddingVertical: 5,
   },
   legendColor: {
     width: 10,
