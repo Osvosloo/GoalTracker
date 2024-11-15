@@ -72,50 +72,51 @@ export default function HomeScreen() {
       console.log("Loading sections...");
 
       const dailyRecords = await getDailyRecords();
-      console.log("Current daily records:", dailyRecords);
 
-      const today = new Date();
-      const formattedToday = today.toISOString().split("T")[0]; // Format today's date as YYYY-MM-DD
+      let dailyRecord = (await getDailyRecordByDate(selectedDate)) || {
+        date: selectedDate,
+        sections: [],
+      };
 
-      // Check if there's a record for today
-      let todayRecord = dailyRecords.find(
-        (record) => record.date === formattedToday
-      );
-      console.log("Today's record:", todayRecord);
+      // If no record for today, handle the case appropriately
+      if (!dailyRecord) {
+        console.log(`No record found for ${dailyRecord}.`);
+        // Handle the case as needed, e.g., show a message or create a default record
+      }
 
       await populateMissingDailyRecords();
 
-      // If no record for today, create one based on existing sections
-      if (!todayRecord) {
-        console.log("No record found for today, creating a new one...");
+      // // If no record for today, create one based on existing sections
+      // if (!todayRecord) {
+      //   console.log("No record found for today, creating a new one...");
 
-        todayRecord = {
-          date: formattedToday,
-          sections: deepCopySections(sections),
-        };
+      //   todayRecord = {
+      //     date: formattedToday,
+      //     sections: deepCopySections(sections),
+      //   };
 
-        // If sections are empty, handle the case appropriately
-        if (todayRecord.sections.length === 0) {
-          console.log(
-            "Sections are empty. You may want to define how to handle this case."
-          );
-          todayRecord.sections = [];
-          setSections(todayRecord.sections);
-        }
+      //   // If sections are empty, handle the case appropriately
+      //   if (todayRecord.sections.length === 0) {
+      //     console.log(
+      //       "Sections are empty. You may want to define how to handle this case."
+      //     );
+      //     todayRecord.sections = [];
+      //     setSections(todayRecord.sections);
+      //   }
 
-        dailyRecords.push(todayRecord);
-        console.log("Today's record created:", todayRecord);
-      }
+      //   dailyRecords.push(todayRecord);
+      //   console.log("Today's record created:", todayRecord);
+      // }
 
       // Save updated records
       await AsyncStorage.setItem(
-        STORAGE_KEYS.DAILY_RECORDS, // Use the STORAGE_KEYS constant
+        STORAGE_KEYS.DAILY_RECORDS,
         JSON.stringify(dailyRecords)
       );
       console.log("Daily records updated and saved:", dailyRecords);
 
       // Update the sections state
-      setSections(todayRecord.sections);
+      setSections(dailyRecord.sections);
     } catch (error) {
       console.error("Failed to load sections:", error);
     }
@@ -340,7 +341,7 @@ export default function HomeScreen() {
         style={{ marginTop: Platform.OS === "web" ? 0 : 95 }}
         data={sections}
         renderItem={renderSectionItem}
-        keyExtractor={(item) => item.title} // Use title as unique key
+        keyExtractor={(item) => item.title}
         contentContainerStyle={styles.listContainer}
         keyboardShouldPersistTaps="handled"
       />

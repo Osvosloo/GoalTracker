@@ -22,7 +22,6 @@ const DropDownMenu: React.FC<DropDownMenuProps> = ({
     setValue(selectedValue);
   }, [selectedValue]);
 
-  // Add "All Sections" option to the items
   const allSectionsItem = { label: "All Sections", value: "all" };
   const dropdownItems = [allSectionsItem, ...items];
 
@@ -38,7 +37,7 @@ const DropDownMenu: React.FC<DropDownMenuProps> = ({
         placeholder="Select a section..."
         onChangeValue={(val) => {
           setValue(val);
-          onValueChange(val); // Pass the selected value to the handler
+          onValueChange(val);
         }}
         style={styles.dropdown}
         dropDownContainerStyle={styles.dropdownContainer}

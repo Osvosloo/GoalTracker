@@ -54,7 +54,7 @@ const SectionList: React.FC<SectionListProps> = ({
           </Text>
         </TouchableOpacity>
       )}
-      keyExtractor={(item) => item.title} // Use title for key extraction
+      keyExtractor={(item) => item.title}
     />
   );
 };

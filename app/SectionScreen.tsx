@@ -129,7 +129,7 @@ export default function SectionScreen() {
         );
 
         if (sectionIndex !== -1) {
-          // Update the existing section with the new title and color
+          // Update the existing section's title and color
           dailyRecords[recordIndex].sections[sectionIndex] = {
             ...dailyRecords[recordIndex].sections[sectionIndex],
             title: sectionTitle, // Use the updated title
@@ -139,7 +139,7 @@ export default function SectionScreen() {
             completedScore: calculateCompletedScore(updatedGoals),
           };
         } else {
-          // If the section is not found, add a new one with the new title and color
+          //make new section with title and color
           dailyRecords[recordIndex].sections.push({
             title: sectionTitle,
             color,
@@ -150,18 +150,18 @@ export default function SectionScreen() {
         }
       } else {
         // If the record for the selected date is not found, create a new one
-        dailyRecords.push({
-          date: selectedDate,
-          sections: [
-            {
-              title: sectionTitle,
-              color,
-              goals: updatedGoals,
-              totalScore: calculateTotalScore(updatedGoals),
-              completedScore: calculateCompletedScore(updatedGoals),
-            },
-          ],
-        });
+        // dailyRecords.push({
+        //   date: selectedDate,
+        //   sections: [
+        //     {
+        //       title: sectionTitle,
+        //       color,
+        //       goals: updatedGoals,
+        //       totalScore: calculateTotalScore(updatedGoals),
+        //       completedScore: calculateCompletedScore(updatedGoals),
+        //     },
+        //   ],
+        // });
       }
 
       await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));

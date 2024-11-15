@@ -11,7 +11,7 @@ export interface WeeklyStats {
 }
 
 export interface DailyRecord {
-  date: string; // Format: "YYYY-MM-DD"
+  date: string; //"YYYY-MM-DD"
   sections: SectionData[]; // Array of sections with their goals
 }
 export interface Section {

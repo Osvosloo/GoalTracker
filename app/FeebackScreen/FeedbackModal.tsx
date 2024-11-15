@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import Constants from "expo-constants";
 import axios from "axios"; // Use axios for API calls
@@ -29,10 +30,12 @@ interface FeedbackModalProps {
 interface SectionFeedback {
   title: string;
   feedback: string;
+  color: string;
 }
 
 interface FeedbackResponse {
   summary: string;
+  score: string;
   sectionFeedback: SectionFeedback[];
   tips: string[];
 }
@@ -41,6 +44,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
   const [feedbackSections, setFeedbackSections] =
     useState<FeedbackResponse | null>(null);
   const [weeklyData, setWeeklyData] = useState<DailyRecord[]>([]);
+  const [loading, setLoading] = useState(false);
   const COHERE_API_KEY = Constants.expoConfig?.extra?.COHERE_API_KEY;
 
   useEffect(() => {
@@ -56,6 +60,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
   }, [visible]);
 
   const handleSubmitFeedback = async () => {
+    setLoading(true);
     try {
       console.log("Loading response");
 
@@ -67,6 +72,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
           completedScore: section.completedScore,
           goalsCompleted: section.goals.filter((goal) => goal.completed).length,
           totalGoals: section.goals.length,
+          color: section.color,
           goals: section.goals.map((goal) => ({
             title: goal.title,
             completed: goal.completed,
@@ -82,14 +88,17 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
       
       1. **summary**: A brief overview of the user's performance, highlighting key metrics and overall trends.
       
-      2. **sectionFeedback**: An array of objects, each containing:
+      2. **score**: A performance score indicating the user's completion rate (options: bad, moderate, good, great, amazing).
+      
+      3. **sectionFeedback**: An array of objects, each containing:
          - **title**: The title of the section (as given in the data).
          - **feedback**: A brief analysis of the completion rate, including specific metrics (e.g., "You completed X out of Y goals") and constructive feedback on how to improve in that section.
+         - **color**: The color code (e.g., "#FF5733") representing the sections' color.
       
-      3. **generalTips**: An array of actionable tips for improvement, formatted as a list.
+      4. **generalTips**: An array of actionable tips for improvement, formatted as a list.
       
       **Important**: Ensure that the JSON is properly formatted and does not include any unnecessary titles or labels. The output should be valid JSON.
-      Note also that this is for a goal tracking app, and thus you should use the section and goal titles to give relevant feedback. 
+      Note also that this is for a goal tracking app, and thus you should use the section and goal titles to give relevant feedback.
       
       Data:
       ${JSON.stringify(formattedData)}
@@ -117,34 +126,42 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
       console.log(parsedFeedback);
     } catch (error) {
       console.error("Error submitting feedback:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const parseFeedback = (feedbackText: string): FeedbackResponse => {
-    // Parse the JSON response
     const feedbackData = JSON.parse(feedbackText);
 
-    // Extract the relevant fields
     const summary = feedbackData.summary;
-    const sectionFeedback: SectionFeedback[] = feedbackData.sectionFeedback;
+    const score = feedbackData.score;
+    const sectionFeedback: SectionFeedback[] = feedbackData.sectionFeedback.map(
+      (section: any) => ({
+        title: section.title,
+        feedback: section.feedback,
+        color: section.color,
+      })
+    );
     const tips: string[] = feedbackData.generalTips;
 
     return {
       summary,
+      score,
       sectionFeedback,
       tips,
     };
   };
 
   const logAllSections = async () => {
-    const today = new Date().toISOString().split("T")[0]; // Get today's date in YYYY-MM-DD format
-    const sections = await getAllSections(today); // Pass the date to the function
+    const today = new Date().toISOString().split("T")[0];
+    const sections = await getAllSections(today);
     console.log("All Sections for today:", sections);
   };
 
   const logDailyRecords = async () => {
     const records = await getDailyRecords();
-    console.log("Daily Records:", JSON.stringify(records, null, 2)); // Pretty print the records
+    console.log("Daily Records:", JSON.stringify(records, null, 2));
   };
 
   const renderFeedback = () => {
@@ -152,12 +169,17 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
 
     return (
       <View>
-        <SummaryComponent summary={feedbackSections.summary} />
+        <SummaryComponent
+          summary={feedbackSections.summary}
+          score={feedbackSections.score}
+        />
+        <Text style={styles.subHeader}>Section Specific Feedback</Text>
         {feedbackSections.sectionFeedback.map((section, index) => (
           <SectionFeedbackComponent
             key={index}
             title={section.title}
             feedback={section.feedback}
+            color={section.color}
           />
         ))}
         <TipsComponent tips={feedbackSections.tips} />
@@ -168,7 +190,14 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
   return (
     <Modal visible={visible} animationType="slide">
       <View style={styles.container}>
-        <ScrollView style={styles.scrollView}>{renderFeedback()}</ScrollView>
+        <Text style={styles.header}>User Feedback</Text>
+        <ScrollView style={styles.scrollView}>
+          {loading ? (
+            <ActivityIndicator size="large" color="#7E57C2" />
+          ) : (
+            renderFeedback()
+          )}
+        </ScrollView>
         <TouchableOpacity
           style={styles.submitButton}
           onPress={handleSubmitFeedback}
@@ -178,7 +207,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.closeButton} onPress={logAllSections}>
+        {/* <TouchableOpacity style={styles.closeButton} onPress={logAllSections}>
           <Text style={styles.closeButtonText}>log All Sections</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.closeButton} onPress={logDailyRecords}>
@@ -186,7 +215,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.closeButton} onPress={getExistingData}>
           <Text style={styles.closeButtonText}>get existing data</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
     </Modal>
   );
@@ -195,12 +224,26 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-
+    // backgroundColor: "#",
     alignItems: "center",
     padding: 20,
   },
   scrollView: {
     maxHeight: 600,
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 20,
+    textAlign: "center",
+    color: "#000",
+  },
+  subHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+    textAlign: "center",
+    color: "#000",
   },
   submitButton: {
     marginTop: 15,

@@ -134,7 +134,7 @@ const createRecordForDate = (
   date: Date,
   sections: SectionData[]
 ): DailyRecord => {
-  const formattedDate = date.toISOString().split("T")[0]; // Format date as YYYY-MM-DD
+  const formattedDate = date.toISOString().split("T")[0];
   return {
     date: formattedDate,
     sections: sections.map((section) => ({

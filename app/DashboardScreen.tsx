@@ -96,7 +96,7 @@ const Dashboard: React.FC = () => {
   };
 
   const dropdownItems = getSectionsForSelectedDate()
-    .filter((section) => section.title !== selectedSection) // Exclude the selected section
+    .filter((section) => section.title !== selectedSection)
     .map((section) => ({
       label: section.title,
       value: section.title,
@@ -105,9 +105,9 @@ const Dashboard: React.FC = () => {
   const handleDateChange = async (date: string) => {
     setSelectedDate(date);
     const today = new Date().toISOString().split("T")[0];
-    const isHistorical = date !== today; // Check if the selected date is historical
-    setIsHistoricalView(isHistorical); // Set the historical view state
-    await loadDashboardData(); // Optionally reload data for the new date
+    const isHistorical = date !== today;
+    setIsHistoricalView(isHistorical);
+    await loadDashboardData();
   };
 
   const handleSectionPress = (sectionTitle: any) => {
@@ -115,8 +115,8 @@ const Dashboard: React.FC = () => {
       pathname: "/SectionScreen",
       params: {
         title: sectionTitle,
-        date: selectedDate, // Pass the selected date here
-        isHistorical: isHistoricalView.toString(), // Pass historical view state
+        date: selectedDate,
+        isHistorical: isHistoricalView.toString(),
       },
     });
   };
@@ -200,8 +200,8 @@ const Dashboard: React.FC = () => {
         <TouchableOpacity
           style={styles.floatingButton}
           onPress={handleOpenModal}
-          onPressIn={() => setTooltipVisible(true)} // Show tooltip on press
-          onPressOut={() => setTooltipVisible(false)} // Hide tooltip when not pressed
+          onPressIn={() => setTooltipVisible(true)}
+          onPressOut={() => setTooltipVisible(false)}
         >
           <MaterialIcons name="lightbulb-outline" size={30} color="#000" />
         </TouchableOpacity>
@@ -259,11 +259,11 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: "#fff", // Change to your desired color
+    backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
-    elevation: 5, // For Android shadow
-    shadowColor: "#000", // For iOS shadow
+    elevation: 5,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
