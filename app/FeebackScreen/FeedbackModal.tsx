@@ -219,6 +219,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     maxHeight: 600,
+    borderWidth: 0,
   },
   header: {
     fontSize: 24,

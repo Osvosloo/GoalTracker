@@ -44,7 +44,7 @@ const SectionList: React.FC<SectionListProps> = ({
           <Text style={styles.legendText}>{item.title}</Text>
           <Text style={styles.legendScore}>
             {item.totalScore > 0
-              ? `${item.completedScore}/${item.totalScore}`
+              ? `${Number(item.completedScore)}/${Number(item.totalScore)}`
               : "No Goals"}
           </Text>
           <Text style={styles.legendScore}>

@@ -52,6 +52,7 @@ const Dashboard: React.FC = () => {
   };
 
   const filterSectionData = () => {
+    console.log("Filtering data with:", selectedSection, selectedDate);
     const dailyRecord = dailyRecords.find(
       (record) => record.date === selectedDate
     );
