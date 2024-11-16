@@ -17,7 +17,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Goal, DailyRecord } from "./types";
 import Header from "./Components/Header";
 import AddButton from "./UI/AddButton";
-// import DashboardManager from "./DashboardComp/DashboardManager";
 
 export default function SectionScreen() {
   const params = useLocalSearchParams();
@@ -70,7 +69,7 @@ export default function SectionScreen() {
             (section) => section.title === sectionTitle
           );
           if (sectionData) {
-            console.log("Goals loaded:", sectionData.goals);
+            // console.log("Goals loaded:", sectionData.goals);
             setGoals(sectionData.goals || []);
             return;
           }
@@ -125,21 +124,19 @@ export default function SectionScreen() {
 
       if (recordIndex !== -1) {
         const sectionIndex = dailyRecords[recordIndex].sections.findIndex(
-          (section) => section.title === sectionTitle // Use the current section title
+          (section) => section.title === sectionTitle
         );
 
         if (sectionIndex !== -1) {
-          // Update the existing section's title and color
           dailyRecords[recordIndex].sections[sectionIndex] = {
             ...dailyRecords[recordIndex].sections[sectionIndex],
-            title: sectionTitle, // Use the updated title
-            color: color, // Use the updated color
+            title: sectionTitle,
+            color: color,
             goals: updatedGoals,
             totalScore: calculateTotalScore(updatedGoals),
             completedScore: calculateCompletedScore(updatedGoals),
           };
         } else {
-          //make new section with title and color
           dailyRecords[recordIndex].sections.push({
             title: sectionTitle,
             color,
@@ -148,20 +145,6 @@ export default function SectionScreen() {
             completedScore: calculateCompletedScore(updatedGoals),
           });
         }
-      } else {
-        // If the record for the selected date is not found, create a new one
-        // dailyRecords.push({
-        //   date: selectedDate,
-        //   sections: [
-        //     {
-        //       title: sectionTitle,
-        //       color,
-        //       goals: updatedGoals,
-        //       totalScore: calculateTotalScore(updatedGoals),
-        //       completedScore: calculateCompletedScore(updatedGoals),
-        //     },
-        //   ],
-        // });
       }
 
       await AsyncStorage.setItem("dailyRecords", JSON.stringify(dailyRecords));

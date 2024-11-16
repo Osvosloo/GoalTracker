@@ -97,7 +97,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
       4. **generalTips**: An array of actionable tips for improvement, formatted as a list and tailored to my specific needs.
       
       **Important**: Ensure that the JSON is properly formatted and does not include any unnecessary titles or labels. The output should be valid JSON.
-      Note also that this is for a goal tracking app, and thus you should use the section and goal titles to give relevant feedback.
+      Note also that this is for a goal tracking app, and thus you should use the section and goal titles to give relevant feedback, and if a .
       
       Data:
       ${JSON.stringify(formattedData)}
@@ -108,7 +108,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
         {
           model: "command-r-plus-08-2024", // Use the appropriate model
           prompt: prompt,
-          max_tokens: 500, // Increased token limit for more detailed feedback
+          max_tokens: 1000, // Increased token limit for more detailed feedback
           temperature: 0.7,
         },
         {
@@ -130,37 +130,36 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
     }
   };
 
-  const parseFeedback = (feedbackText: string): FeedbackResponse => {
-    const feedbackData = JSON.parse(feedbackText);
+  const parseFeedback = (feedbackText: string): FeedbackResponse | null => {
+    if (!feedbackText) {
+      console.error("Empty feedback text received");
+      return null;
+    }
 
-    const summary = feedbackData.summary;
-    const score: Score = feedbackData.score;
-    const sectionFeedback: SectionFeedback[] = feedbackData.sectionFeedback.map(
-      (section: any) => ({
-        title: section.title,
-        feedback: section.feedback,
-        color: section.color,
-      })
-    );
-    const tips: string[] = feedbackData.generalTips;
+    console.log("Received feedback:", feedbackText);
+    try {
+      const feedbackData = JSON.parse(feedbackText);
 
-    return {
-      summary,
-      score,
-      sectionFeedback,
-      tips,
-    };
-  };
+      const summary = feedbackData.summary;
+      const score: Score = feedbackData.score;
+      const sectionFeedback: SectionFeedback[] =
+        feedbackData.sectionFeedback.map((section: any) => ({
+          title: section.title,
+          feedback: section.feedback,
+          color: section.color,
+        }));
+      const tips: string[] = feedbackData.generalTips;
 
-  const logAllSections = async () => {
-    const today = new Date().toISOString().split("T")[0];
-    const sections = await getAllSections(today);
-    console.log("All Sections for today:", sections);
-  };
-
-  const logDailyRecords = async () => {
-    const records = await getDailyRecords();
-    console.log("Daily Records:", JSON.stringify(records, null, 2));
+      return {
+        summary,
+        score,
+        sectionFeedback,
+        tips,
+      };
+    } catch (error) {
+      console.error("Error parsing feedback response:", error);
+      return null;
+    }
   };
 
   const renderFeedback = () => {
@@ -206,15 +205,6 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>
-        {/* <TouchableOpacity style={styles.closeButton} onPress={logAllSections}>
-          <Text style={styles.closeButtonText}>log All Sections</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.closeButton} onPress={logDailyRecords}>
-          <Text style={styles.closeButtonText}>log daily records</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.closeButton} onPress={getExistingData}>
-          <Text style={styles.closeButtonText}>get existing data</Text>
-        </TouchableOpacity> */}
       </View>
     </Modal>
   );

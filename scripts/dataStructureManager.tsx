@@ -1,53 +1,50 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DailyRecord, SectionData, ExistingData } from "../app/types";
 import { getDailyRecordByDate } from "./getFromStorage";
+import cloneDeep from "lodash/cloneDeep";
 
 let existingData: ExistingData | null = null;
 
 export const STORAGE_KEYS = {
   DAILY_RECORDS: "dailyRecords",
   DAILY_COMPLETION: "dailyCompletion",
+  EXISTING_DATA: "existingData",
 };
 
-export const loadExistingData = async () => {
-  try {
-    const data = await AsyncStorage.getItem("existingData");
-    if (data) {
-      existingData = JSON.parse(data);
-      console.log(`loading existing data: ${existingData}`);
-    }
-  } catch (error) {
-    console.error("Failed to load existing data:", error);
-  }
-};
+// export const loadExistingData = async () => {
+//   try {
+//     const data = await AsyncStorage.getItem("existingData");
+//     if (data) {
+//       existingData = JSON.parse(data);
+//       console.log(`loading existing data: ${existingData}`);
+//     }
+//   } catch (error) {
+//     console.error("Failed to load existing data:", error);
+//   }
+// };
 
 export const updateExistingData = async () => {
   const today = new Date().toISOString().split("T")[0];
   const dailyRecord = await getDailyRecordByDate(today);
   if (dailyRecord) {
-    existingData = {
-      sections: dailyRecord.sections.map((section) => ({
-        ...section,
-        goals: section.goals.map((goal) => ({
-          ...goal,
-          completed: goal.completed, // Keep the completion status
-        })),
-      })),
-    };
+    existingData = { sections: mapSections(dailyRecord.sections) };
   }
-  saveExistingData();
+  saveExistingData(existingData);
 };
 
 // Save existing data to AsyncStorage
-const saveExistingData = async () => {
+const saveExistingData = async (existingData: ExistingData | null) => {
   try {
-    await AsyncStorage.setItem("existingData", JSON.stringify(existingData));
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.EXISTING_DATA,
+      JSON.stringify(existingData)
+    );
+    console.log(`updating existing record: ${JSON.stringify(existingData)}`);
   } catch (error) {
     console.error("Failed to save existing data:", error);
   }
 };
 
-// Cleanup old records
 export const cleanupOldRecords = async () => {
   try {
     const recordsData = await AsyncStorage.getItem(STORAGE_KEYS.DAILY_RECORDS);
@@ -69,10 +66,10 @@ export const cleanupOldRecords = async () => {
       STORAGE_KEYS.DAILY_RECORDS,
       JSON.stringify(cleanedRecords)
     );
-    console.log(
-      "Cleaned up old records, keeping only the last 7 days:",
-      cleanedRecords
-    );
+    // console.log(
+    //   "Cleaned up old records, keeping only the last 7 days:",
+    //   cleanedRecords
+    // );
   } catch (error) {
     console.error("Failed to clean up old records:", error);
   }
@@ -137,13 +134,7 @@ const createRecordForDate = (
   const formattedDate = date.toISOString().split("T")[0];
   return {
     date: formattedDate,
-    sections: sections.map((section) => ({
-      ...section,
-      goals: section.goals.map((goal) => ({
-        ...goal,
-        completed: false, // Mark all goals as uncompleted for new records
-      })),
-    })),
+    sections: mapSections(sections, false),
   };
 };
 
@@ -176,9 +167,26 @@ export const saveDailyCompletion = async (sections: SectionData[]) => {
   }
 };
 
+// export const deepCopySections = (sections: SectionData[]): SectionData[] => {
+//   return sections.map((section) => ({
+//     ...section,
+//     goals: [...section.goals],
+//   }));
+// };
+
 export const deepCopySections = (sections: SectionData[]): SectionData[] => {
+  return cloneDeep(sections);
+};
+
+const mapSections = (
+  sections: SectionData[],
+  completed: boolean = false
+): SectionData[] => {
   return sections.map((section) => ({
     ...section,
-    goals: [...section.goals],
+    goals: section.goals.map((goal) => ({
+      ...goal,
+      completed,
+    })),
   }));
 };

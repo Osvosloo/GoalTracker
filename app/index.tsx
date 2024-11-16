@@ -25,7 +25,6 @@ import {
 } from "@/scripts/getFromStorage";
 import {
   populateMissingDailyRecords,
-  loadExistingData,
   updateExistingData,
   saveDailyCompletion,
   deepCopySections,
@@ -47,7 +46,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     populateMissingDailyRecords();
-    loadExistingData();
+    updateExistingData();
     loadSections();
     checkAndResetGoals();
     const subscription = AppState.addEventListener(
@@ -113,8 +112,8 @@ export default function HomeScreen() {
         STORAGE_KEYS.DAILY_RECORDS,
         JSON.stringify(dailyRecords)
       );
-      console.log("Daily records updated and saved:", dailyRecords);
-
+      // console.log("Daily records updated and saved:", dailyRecords);
+      getDailyRecords();
       // Update the sections state
       setSections(dailyRecord.sections);
     } catch (error) {
@@ -136,6 +135,7 @@ export default function HomeScreen() {
     }
 
     try {
+      updateExistingData();
       const recordsData = await AsyncStorage.getItem("dailyRecords");
       let dailyRecords: DailyRecord[] = recordsData
         ? JSON.parse(recordsData)
@@ -174,7 +174,6 @@ export default function HomeScreen() {
   };
 
   const handleUpdateSection = async () => {
-    console.log("Before Update:", sections);
     if (!sectionTitle.trim()) {
       alert("Section title cannot be empty!");
       return;
@@ -203,6 +202,7 @@ export default function HomeScreen() {
     console.log("Updated Sections:", updatedSections);
     await saveSections(updatedSections);
     setSections(updatedSections);
+    updateExistingData();
     closeModal();
   };
 
@@ -212,7 +212,9 @@ export default function HomeScreen() {
     );
     await saveSections(updatedSections);
     setSections(updatedSections);
+    updateExistingData();
   };
+
   const saveSections = async (updatedSections: SectionData[]) => {
     try {
       const recordsData = await AsyncStorage.getItem("dailyRecords");

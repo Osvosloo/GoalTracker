@@ -71,6 +71,15 @@ const BurgerMenu: React.FC<BurgerMenuProps> = ({ visible, onClose }) => {
           >
             <Text style={styles.menuText}>Dashboard</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => {
+              onClose();
+              router.push("/TestScreen");
+            }}
+          >
+            <Text style={styles.menuText}>Test Screen</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.menuItem} onPress={onClose}>
             <Text style={styles.menuText}>Settings</Text>
           </TouchableOpacity>

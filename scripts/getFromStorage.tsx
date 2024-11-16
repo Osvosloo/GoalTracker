@@ -4,17 +4,27 @@ import { DailyRecord, SectionData } from "../app/types";
 const STORAGE_KEYS = {
   DAILY_RECORDS: "dailyRecords",
   LAST_RESET_DATE: "lastResetDate",
+  EXISTING_DATA: "existingData",
 };
 
-export const getExistingData = async () => {
+export const getExistingData = async (): Promise<{
+  sections: SectionData[];
+} | null> => {
   try {
-    const data = await AsyncStorage.getItem("existingData");
+    console.log("Fetching existing data...");
+    const data = await AsyncStorage.getItem(STORAGE_KEYS.EXISTING_DATA);
+
     if (data) {
-      let existingData = JSON.parse(data);
-      console.log(existingData);
+      const existingData = JSON.parse(data);
+      console.log("Existing data loaded:", existingData);
+      return existingData;
+    } else {
+      console.warn("No existing data found.");
+      return null;
     }
   } catch (error) {
     console.error("Failed to load existing data:", error);
+    return null;
   }
 };
 
