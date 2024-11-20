@@ -11,8 +11,8 @@ const TipsComponent: React.FC<TipsComponentProps> = ({ tips }) => {
     <View style={styles.gradientBorder}>
       <LinearGradient
         colors={["#7E57C2", "#121212"]}
-        start={{ x: 0, y: 0 }} // Starting point of the gradient
-        end={{ x: 1, y: 1 }} // Ending point of the gradient
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={styles.gradient}
       >
         <View style={styles.container}>
@@ -31,17 +31,17 @@ const TipsComponent: React.FC<TipsComponentProps> = ({ tips }) => {
 const styles = StyleSheet.create({
   container: {
     padding: 15,
-    backgroundColor: "#FFFFFF", // Solid background for the inner container
-    borderRadius: 5, // Match the border radius with the gradient
+    backgroundColor: "#FFFFFF",
+    borderRadius: 5,
   },
   gradient: {
-    borderRadius: 5, // Ensure the gradient also has rounded corners
-    padding: 5, // Add padding to create the appearance of a border
+    borderRadius: 5,
+    padding: 5,
   },
   gradientBorder: {
-    padding: 5, // Padding to create space for the gradient border
+    padding: 5,
     borderRadius: 5,
-    overflow: "hidden", // Ensures the gradient border follows the rounded corners
+    overflow: "hidden",
   },
 
   title: {

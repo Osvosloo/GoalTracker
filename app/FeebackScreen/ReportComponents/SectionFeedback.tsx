@@ -31,8 +31,8 @@ const SectionFeedbackComponent: React.FC<SectionFeedbackComponentProps> = ({
         <Text style={styles.title}>{title}</Text>
         <Text
           style={styles.feedback}
-          numberOfLines={isExpanded ? undefined : 2} // Show all lines when expanded, limit to 2 when collapsed
-          ellipsizeMode="tail" // Show ellipsis at the end of the text when cut off
+          numberOfLines={isExpanded ? undefined : 2}
+          ellipsizeMode="tail"
         >
           {feedback}
         </Text>

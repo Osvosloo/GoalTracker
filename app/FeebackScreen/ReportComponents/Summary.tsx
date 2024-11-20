@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#121212",
     borderRadius: 15,
     paddingHorizontal: 10,
-    paddingVertical: 5, // Add padding for better spacing
+    paddingVertical: 5,
     alignSelf: "flex-start",
   },
   scoreLabel: {

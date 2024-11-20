@@ -48,8 +48,8 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
 
   useEffect(() => {
     const loadData = async () => {
-      await cleanupOldRecords(); // Clean up old records when modal opens
-      const data = await fetchWeeklyData(); // Fetch the past 7 days of data
+      await cleanupOldRecords();
+      const data = await fetchWeeklyData();
       setWeeklyData(data);
     };
 
@@ -106,9 +106,9 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ visible, onClose }) => {
       const response = await axios.post(
         "https://api.cohere.ai/generate",
         {
-          model: "command-r-plus-08-2024", // Use the appropriate model
+          model: "command-r-plus-08-2024",
           prompt: prompt,
-          max_tokens: 1000, // Increased token limit for more detailed feedback
+          max_tokens: 1000,
           temperature: 0.7,
         },
         {

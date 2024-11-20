@@ -201,7 +201,7 @@ export const DashboardManager = {
 
         const createGoalObject = (id: string) => {
           const goal = goals.find((g) => g.id === id);
-          return { id, name: goal ? goal.name : "Unknown Goal" };
+          return { id, name: goal ? goal.title : "Unknown Goal" };
         };
 
         const mostCompletedGoals =
